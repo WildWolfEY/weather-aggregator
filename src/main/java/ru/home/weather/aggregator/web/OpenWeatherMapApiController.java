@@ -8,6 +8,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
+import ru.home.weather.aggregator.domain.WebSite;
+import ru.home.weather.aggregator.repository.WebSiteRepository;
 import ru.home.weather.aggregator.service.OpenWeatherMapParser;
 import ru.home.weather.aggregator.service.for_test.TestHttpResponse;
 
@@ -17,16 +19,20 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Locale;
+import java.util.NoSuchElementException;
 
 /**
  * @author Elena Demeneva
  */
 @Service
 public class OpenWeatherMapApiController implements ApiController {
-    private final HttpClient client = HttpClient.newBuilder().build();
+    protected final HttpClient client = HttpClient.newBuilder().build();
     private final String token = "518ca609f4c02785d22c816ef52b6c9c";
     @Autowired
     private OpenWeatherMapParser parser;
+    @Autowired
+    WebSiteRepository webSiteRepository;
 
     @Override
     public List<Indication> getForecasts(City city) {
@@ -59,6 +65,8 @@ public class OpenWeatherMapApiController implements ApiController {
             }
         } catch (JsonProcessingException exception) {
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка парсинга ответа от api.openweathermap.org");
+        } catch (NoSuchElementException exception) {
+            throw exception;
         } catch (Exception e) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу api.openweathermap.org");
         }
@@ -86,13 +94,14 @@ public class OpenWeatherMapApiController implements ApiController {
 
     private HttpResponse<String> getCityHttpResponse(String cityName, String state, String countryAlpha2Code, int limit)
             throws InterruptedException, IOException {
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://api.openweathermap.org/geo/1.0/direct?q=" +
                         cityName +
                         "," + state +
-                        "," +
-                        countryAlpha2Code +
-                        "&limit=" + limit + "&appid=" + token))
+                        "," + (countryAlpha2Code.isBlank() ? Locale.getDefault().getCountry() : countryAlpha2Code)
+                        +"&limit=" + limit +
+                        "&appid=" + token))
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -100,7 +109,11 @@ public class OpenWeatherMapApiController implements ApiController {
 
     private HttpResponse<String> getForecastsHttpResponse(City city) throws InterruptedException, IOException {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://api.openweathermap.org/data/2.5/forecast?lat=" + city.getLatitude() + "&lon=" + city.getLongitude() + "&appid=" + token))
+                .uri(URI.create("http://api.openweathermap.org/data/2.5/forecast?lat=" +
+                        city.getLatitude() +
+                        "&lon=" +
+                        city.getLongitude() +
+                        "&appid=" + token))
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -108,7 +121,11 @@ public class OpenWeatherMapApiController implements ApiController {
 
     private HttpResponse<String> getObservationHttpResponse(City city) throws InterruptedException, IOException {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://api.openweathermap.org/data/2.5/weather?lat=" + city.getLatitude() + "&lon=" + city.getLongitude() + "&appid=" + token))
+                .uri(URI.create("http://api.openweathermap.org/data/2.5/weather?lat=" +
+                        city.getLatitude() + "&lon=" +
+                        city.getLongitude() +
+                        "&appid=" +
+                        token))
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());

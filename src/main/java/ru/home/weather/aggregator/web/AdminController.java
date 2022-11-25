@@ -38,9 +38,10 @@ public class AdminController {
 
     @GetMapping("/admin/website/add")
     public String addWebSite(@RequestParam String title, @RequestParam String http, Model model) {
-        WebSite website = new WebSite();
-        website.setTitle(title);
-        website.setHttp(http);
+        WebSite website = WebSite.builder()
+                .title(title.isBlank() ? null : title)
+                .http(http.isBlank() ? null : http)
+                .build();
         try {
             webSiteRepository.save(website);
         } catch (Exception exception) {

@@ -11,6 +11,8 @@ import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.repository.CityRepository;
 import ru.home.weather.aggregator.service.CountryService;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -42,7 +44,7 @@ public class UIController {
     @GetMapping("/city/search")
     public String addCity(@RequestParam String name, @RequestParam String country, Model model) {
         try {
-            List<City> cities = openWeatherMapApiController.getCities(name, "", country, 5);
+            List<City> cities = openWeatherMapApiController.getCities(name, "", country, 10);
             model.addAttribute("cities", cities);
         } catch (Exception exception) {
             System.err.println("Ошибка при поиске города " + exception.getMessage());

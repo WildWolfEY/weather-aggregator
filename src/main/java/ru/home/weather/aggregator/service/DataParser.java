@@ -9,8 +9,8 @@ import java.util.List;
 /**
  * @author Elena Demeneva
  */
-public interface DataParser {
-    List<Indication> parseForecastIndications(String data) throws JsonProcessingException, ParseException;
+public interface DataParser<T, E> {
+    List<Indication> parseForecastIndications(T data) throws JsonProcessingException, ParseException;
 
-    Indication parseObservationIndication(String data) throws JsonProcessingException, ParseException;
+    Indication parseObservationIndication(E data) throws JsonProcessingException, ParseException;
 }

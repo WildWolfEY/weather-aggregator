@@ -7,12 +7,17 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import ru.home.weather.aggregator.domain.City;
+import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.CityRepository;
 import ru.home.weather.aggregator.repository.IndicationRepository;
+import ru.home.weather.aggregator.repository.WebSiteRepository;
 import ru.home.weather.aggregator.web.OpenWeatherMapApiController;
+import ru.home.weather.aggregator.web.YandexPogodaApiController;
 
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.NoSuchElementException;
 
 import static java.util.Calendar.*;
 
@@ -29,6 +34,8 @@ public class IndicationCollector {
     @Autowired
     OpenWeatherMapApiController openWeatherMapApiController;
     @Autowired
+    YandexPogodaApiController yandexPogodaApiController;
+    @Autowired
     IndicationRepository indicationRepository;
 
     @Scheduled(cron = "${scheduler.interval.forecasts}")
@@ -38,10 +45,13 @@ public class IndicationCollector {
         for (City city : cities) {
             try {
                 indicationRepository.saveAll(openWeatherMapApiController.getForecasts(city));
+                indicationRepository.saveAll(yandexPogodaApiController.getForecasts(city));
             } catch (HttpClientErrorException exception) {
                 System.err.println("Status: " + exception.getStatusCode().toString() + "; " + exception.getMessage());
             }
         }
+
+        System.out.println(new Date() +" - getForecasts()");
     }
 
     @Scheduled(cron = "${scheduler.interval.observation}")
@@ -54,6 +64,7 @@ public class IndicationCollector {
                 System.err.println("Status: " + exception.getStatusCode().toString() + "; " + exception.getMessage());
             }
         }
+        System.out.println(new Date() +" - getObservations()");
     }
 
     @Scheduled(cron = "${scheduler.interval.clear}")
@@ -62,6 +73,6 @@ public class IndicationCollector {
         calendar.add(DATE, -1);
         Instant date = Instant.ofEpochMilli(calendar.getTimeInMillis());
         indicationRepository.deleteByDateIndicateBefore(date);
-        System.out.println("Удалили старьё");
+        System.out.println(new Date() +" - clear()");
     }
 }

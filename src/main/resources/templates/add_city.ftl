@@ -12,6 +12,7 @@
 </form>
 <#if cities??>
 <form action="/city/add">
+<#if cities?has_content>
     <select name="cityJson">
     <#list cities as city>
        <option value='${city.json}'>
@@ -21,6 +22,9 @@
     </#list>
     </select>
     <button type="submit">Выбрать</button>
+<#else>
+    Город не найден
+</#if>
 </form>
 </#if>
 <#if exc??>

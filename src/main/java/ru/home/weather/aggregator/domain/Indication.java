@@ -1,11 +1,6 @@
 package ru.home.weather.aggregator.domain;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConstructorBinding;
+import lombok.*;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,9 +19,10 @@ import java.time.Instant;
 @Entity
 @Table(name = "indications")
 @Builder
-@ConstructorBinding
 @EqualsAndHashCode
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Indication {
     @Id
     @Column(name = "id_indication")
@@ -36,6 +32,7 @@ public class Indication {
     private float millimeters;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_website")
+    @Setter
     private WebSite webSite;
     private Instant dateRequest;
     private Instant dateIndicate;

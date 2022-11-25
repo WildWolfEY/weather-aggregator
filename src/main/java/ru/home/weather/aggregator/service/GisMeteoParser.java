@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @author Elena Demeneva
  */
-public class GisMeteoParser implements DataParser {
+public class GisMeteoParser implements DataParser<String, String> {
     @Override
     public List<Indication> parseForecastIndications(String data) throws JsonProcessingException {
         return null;
