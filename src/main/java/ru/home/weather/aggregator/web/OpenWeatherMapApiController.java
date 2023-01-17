@@ -1,6 +1,7 @@
 package ru.home.weather.aggregator.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -8,8 +9,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.domain.WebSite;
-import ru.home.weather.aggregator.repository.WebSiteRepository;
 import ru.home.weather.aggregator.service.OpenWeatherMapParser;
 import ru.home.weather.aggregator.service.for_test.TestHttpResponse;
 
@@ -20,22 +19,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Locale;
-import java.util.NoSuchElementException;
 
 /**
  * @author Elena Demeneva
  */
 @Service
-public class OpenWeatherMapApiController implements ApiController {
+@Log4j2
+public class OpenWeatherMapApiController implements WeatherApiController {
     protected final HttpClient client = HttpClient.newBuilder().build();
     private final String token = "518ca609f4c02785d22c816ef52b6c9c";
     @Autowired
     private OpenWeatherMapParser parser;
-    @Autowired
-    WebSiteRepository webSiteRepository;
 
     @Override
     public List<Indication> getForecasts(City city) {
+        log.debug("getForecasts(City city), параметр {}", city);
         int httpStatus;
         try {
             HttpResponse<String> httpResponse = getForecastsHttpResponse(city);
@@ -45,17 +43,22 @@ public class OpenWeatherMapApiController implements ApiController {
                 for (Indication indication : indications) {
                     indication.setCity(city);
                 }
+                log.debug("результат {}", indications);
                 return indications;
             }
         } catch (JsonProcessingException exception) {
+            log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка парсинга ответа от api.openweathermap.org");
         } catch (Exception e) {
+            log.warn("ошибка {} {}", e.toString(), e.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу api.openweathermap.org");
         }
+        log.warn("ошибка в ответе от сервера api.openweathermap.org httpStatus = {}", httpStatus);
         throw new HttpClientErrorException(HttpStatus.valueOf(httpStatus), "Ошибка в ответе от сервера api.openweathermap.org");
     }
 
     public List<City> getCities(String cityName, String area, String countryAlpha2Code, int limit) {
+        log.debug("getCities(String cityName, String area, String countryAlpha2Code, int limit), параметры {},{},{},{}", cityName, area, countryAlpha2Code, limit);
         int httpStatus;
         try {
             HttpResponse<String> httpResponse = getCityHttpResponse(cityName, area, countryAlpha2Code, limit);
@@ -64,17 +67,19 @@ public class OpenWeatherMapApiController implements ApiController {
                 return parser.parseCities(httpResponse.body());
             }
         } catch (JsonProcessingException exception) {
+            log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка парсинга ответа от api.openweathermap.org");
-        } catch (NoSuchElementException exception) {
-            throw exception;
-        } catch (Exception e) {
+        } catch (Exception exception) {
+            log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу api.openweathermap.org");
         }
+        log.warn("ошибка в ответе от сервера api.openweathermap.org httpStatus ={}", httpStatus);
         throw new HttpClientErrorException(HttpStatus.valueOf(httpStatus), "Ошибка в ответе от сервера api.openweathermap.org");
     }
 
     @Override
     public Indication getObservation(City city) {
+        log.debug("getObservation(City city), параметр {}", city);
         int httpStatus;
         try {
             HttpResponse<String> httpResponse = getObservationHttpResponse(city);
@@ -85,29 +90,36 @@ public class OpenWeatherMapApiController implements ApiController {
                 return indication;
             }
         } catch (JsonProcessingException exception) {
+            log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка парсинга ответа от api.openweathermap.org");
-        } catch (Exception e) {
+        } catch (Exception exception) {
+            log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу api.openweathermap.org");
         }
+        log.warn("ошибка в ответе от сервера api.openweathermap.org httpStatus = {}", httpStatus);
         throw new HttpClientErrorException(HttpStatus.valueOf(httpStatus), "Ошибка в ответе от сервера api.openweathermap.org");
+
     }
 
-    private HttpResponse<String> getCityHttpResponse(String cityName, String state, String countryAlpha2Code, int limit)
+    private HttpResponse<String> getCityHttpResponse(String cityName, String area, String countryAlpha2Code, int limit)
             throws InterruptedException, IOException {
-
+        log.debug("getCityHttpResponse(String cityName, String area, String countryAlpha2Code, int limit), параметры {},{},{},{}"
+                , cityName, area, countryAlpha2Code, limit);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://api.openweathermap.org/geo/1.0/direct?q=" +
                         cityName +
-                        "," + state +
+                        "," + area +
                         "," + (countryAlpha2Code.isBlank() ? Locale.getDefault().getCountry() : countryAlpha2Code)
-                        +"&limit=" + limit +
+                        + "&limit=" + limit +
                         "&appid=" + token))
                 .GET()
                 .build();
+        log.debug("обращаемся к api по url = {}", request.uri());
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> getForecastsHttpResponse(City city) throws InterruptedException, IOException {
+        log.debug("getForecastsHttpResponse(City city), параметр {}", city);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://api.openweathermap.org/data/2.5/forecast?lat=" +
                         city.getLatitude() +
@@ -116,10 +128,12 @@ public class OpenWeatherMapApiController implements ApiController {
                         "&appid=" + token))
                 .GET()
                 .build();
+        log.debug("обращаемся к api по url = {}", request.uri());
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> getObservationHttpResponse(City city) throws InterruptedException, IOException {
+        log.debug("getObservationHttpResponse(City city), параметр {}", city);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://api.openweathermap.org/data/2.5/weather?lat=" +
                         city.getLatitude() + "&lon=" +
@@ -128,6 +142,7 @@ public class OpenWeatherMapApiController implements ApiController {
                         token))
                 .GET()
                 .build();
+        log.debug("обращаемся к api по url = {}", request.uri());
         return client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 

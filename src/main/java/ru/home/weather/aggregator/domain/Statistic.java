@@ -1,6 +1,14 @@
 package ru.home.weather.aggregator.domain;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.springframework.data.util.Pair;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,36 +25,27 @@ import java.time.Instant;
  * @author Elena Demeneva
  */
 @Entity
-@Table(name = "indications")
+@Table
 @Builder
-@EqualsAndHashCode
-@Getter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 @ToString
-public class Indication implements Comparable<Indication> {
+public class Statistic {
     @Id
-    @Column(name = "id_indication")
+    @Column(name = "id_statistic")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
-    private float temperature;
-    private float millimeters;
-    private Intensity intensity;
+    private double standartDeviationTemperature;
+    private double standartDeviationIntencity;
+    private Instant startPeriod;
+    private Instant endPeriod;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_website")
-    @Setter
     private WebSite webSite;
-    private Instant dateRequest;
-    private Instant dateIndicate;
-    @Setter
-    private boolean isForecast;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_city")
-    @Setter
     private City city;
-
-    @Override
-    public int compareTo(Indication indication) {
-        return this.getDateIndicate().compareTo(indication.getDateIndicate());
-    }
+    private int countDays;
 }

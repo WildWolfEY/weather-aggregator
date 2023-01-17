@@ -1,6 +1,7 @@
 package ru.home.weather.aggregator.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
@@ -9,24 +10,24 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.repository.CityRepository;
-import ru.home.weather.aggregator.service.CountryService;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Elena Demeneva
  */
 
 @Controller
+@Log4j2
 public class UIController {
     @Autowired
-    CountryService countryService;
+    Map<String,String > countries;
     @Autowired
     CityRepository cityRepository;
     @Autowired
-    OpenWeatherMapApiController openWeatherMapApiController;
+    MaptilerApiController maptilerApiController;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/")
@@ -37,17 +38,17 @@ public class UIController {
 
     @GetMapping("/city")
     public String goToCity(Model model) {
-        model.addAttribute("countries", countryService.getCountries());
+        model.addAttribute("countries", countries);
         return "add_city";
     }
 
     @GetMapping("/city/search")
-    public String addCity(@RequestParam String name, @RequestParam String country, Model model) {
+    public String searchCity(@RequestParam String name, @RequestParam String area, @RequestParam String country, Model model) {
         try {
-            List<City> cities = openWeatherMapApiController.getCities(name, "", country, 10);
-            model.addAttribute("cities", cities);
+            List<City> foundCities = maptilerApiController.getCities(name, area, country);
+            model.addAttribute("cities", foundCities);
         } catch (Exception exception) {
-            System.err.println("Ошибка при поиске города " + exception.getMessage());
+            log.warn("Ошибка при поиске города {}, {}", exception.toString(), exception.getMessage());
             model.addAttribute("exc", exception.getMessage());
         }
         return goToCity(model);
@@ -59,10 +60,11 @@ public class UIController {
             City city = objectMapper.readValue(cityJson, City.class);
             cityRepository.save(city);
         } catch (DataIntegrityViolationException exception) {
-            System.err.println(exception.getRootCause().getMessage());
+            log.warn("Ошибка при добавлении города {}, {}", exception.toString(), exception.getMessage());
             handleException(exception.getRootCause().getMessage(), model);
             return (goToCity(model));
         } catch (Exception exception) {
+            log.warn("Ошибка при добавлении города {}, {}", exception.toString(), exception.getMessage());
             handleException(exception.getMessage(), model);
             return (goToCity(model));
         }
@@ -70,7 +72,6 @@ public class UIController {
     }
 
     private void handleException(String message, Model model) {
-        System.err.println(message);
         model.addAttribute("exc", message);
     }
 }

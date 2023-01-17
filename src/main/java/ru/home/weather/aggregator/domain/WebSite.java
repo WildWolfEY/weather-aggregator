@@ -17,6 +17,7 @@ import javax.persistence.Table;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class WebSite {
     @Id
     @Column(name = "id_website")

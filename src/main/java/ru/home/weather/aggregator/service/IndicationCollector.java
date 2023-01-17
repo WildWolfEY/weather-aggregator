@@ -1,23 +1,24 @@
 package ru.home.weather.aggregator.service;
 
+import lombok.extern.log4j.Log4j2;
+import org.assertj.core.util.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import ru.home.weather.aggregator.domain.City;
-import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.CityRepository;
 import ru.home.weather.aggregator.repository.IndicationRepository;
-import ru.home.weather.aggregator.repository.WebSiteRepository;
+import ru.home.weather.aggregator.web.GisMeteoApiController;
 import ru.home.weather.aggregator.web.OpenWeatherMapApiController;
 import ru.home.weather.aggregator.web.YandexPogodaApiController;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static java.util.Calendar.*;
 
@@ -28,6 +29,7 @@ import static java.util.Calendar.*;
 @EnableScheduling
 @Service
 @ConditionalOnProperty(name = "scheduler.enabled", matchIfMissing = true)
+@Log4j2
 public class IndicationCollector {
     @Autowired
     CityRepository cityRepository;
@@ -36,43 +38,47 @@ public class IndicationCollector {
     @Autowired
     YandexPogodaApiController yandexPogodaApiController;
     @Autowired
+    GisMeteoApiController gisMeteoApiController;
+    @Autowired
     IndicationRepository indicationRepository;
 
     @Scheduled(cron = "${scheduler.interval.forecasts}")
     //@Scheduled (fixedDelay = 5*60*1000)
-    public void getForecasts() {
-        Iterable<City> cities = cityRepository.findAll();
-        for (City city : cities) {
+    public void saveForecasts() {
+        log.debug("getForecasts()");
+        for (City city : cityRepository.findAll()) {
             try {
                 indicationRepository.saveAll(openWeatherMapApiController.getForecasts(city));
                 indicationRepository.saveAll(yandexPogodaApiController.getForecasts(city));
-            } catch (HttpClientErrorException exception) {
-                System.err.println("Status: " + exception.getStatusCode().toString() + "; " + exception.getMessage());
+                indicationRepository.saveAll(gisMeteoApiController.getForecasts(city));
+            } catch (Exception exception) {
+                log.warn("Не удалось корректно выполнить запрос getForecasts");
             }
         }
-
-        System.out.println(new Date() +" - getForecasts()");
     }
 
     @Scheduled(cron = "${scheduler.interval.observation}")
-    public void getObservations() {
-        Iterable<City> cities = cityRepository.findAll();
-        for (City city : cities) {
+    public void saveObservations() {
+        log.debug("getObservations()");
+        for (City city : cityRepository.findAll()) {
             try {
                 indicationRepository.save(openWeatherMapApiController.getObservation(city));
-            } catch (HttpClientErrorException exception) {
-                System.err.println("Status: " + exception.getStatusCode().toString() + "; " + exception.getMessage());
+                indicationRepository.save(yandexPogodaApiController.getObservation(city));
+                indicationRepository.save(gisMeteoApiController.getObservation(city));
+            } catch (Exception exception) {
+                log.warn("Не удалось корректно выполнить запрос getObservations");
             }
         }
-        System.out.println(new Date() +" - getObservations()");
     }
 
     @Scheduled(cron = "${scheduler.interval.clear}")
     public void clear() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(DATE, -1);
-        Instant date = Instant.ofEpochMilli(calendar.getTimeInMillis());
-        indicationRepository.deleteByDateIndicateBefore(date);
-        System.out.println(new Date() +" - clear()");
+        log.debug("clear()");
+        LocalDate date = LocalDate.now().minusDays(15);
+        try {
+            indicationRepository.deleteByDateIndicateBefore(Instant.from(date));
+        } catch (Exception exception) {
+            log.warn("Не удалось выполнить очистку старых записей");
+        }
     }
 }
