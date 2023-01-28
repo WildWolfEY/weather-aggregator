@@ -30,6 +30,7 @@ public class Indication implements Comparable<Indication> {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private float temperature;
+    @Deprecated
     private float millimeters;
     private Intensity intensity;
     @ManyToOne(fetch = FetchType.EAGER)

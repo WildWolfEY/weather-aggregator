@@ -9,7 +9,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.service.OpenWeatherMapParser;
+import ru.home.weather.aggregator.service.parser.OpenWeatherMapParser;
 import ru.home.weather.aggregator.service.for_test.TestHttpResponse;
 
 import java.io.IOException;

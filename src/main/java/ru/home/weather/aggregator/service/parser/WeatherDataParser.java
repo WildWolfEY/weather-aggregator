@@ -1,4 +1,4 @@
-package ru.home.weather.aggregator.service;
+package ru.home.weather.aggregator.service.parser;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import ru.home.weather.aggregator.domain.Indication;

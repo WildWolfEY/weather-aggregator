@@ -12,6 +12,7 @@ import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
+import ru.home.weather.aggregator.service.parser.OpenWeatherMapParser;
 
 import java.time.Instant;
 import java.util.List;

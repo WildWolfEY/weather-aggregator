@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.service.GisMeteoParser;
+import ru.home.weather.aggregator.service.parser.GisMeteoParser;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,24 +1,22 @@
-package ru.home.weather.aggregator.service;
+package ru.home.weather.aggregator.service.parser;
 
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.home.weather.aggregator.domain.Indication;
 import ru.home.weather.aggregator.domain.Intensity;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
+import ru.home.weather.aggregator.service.IntensityDeterminant;
 
 import java.io.IOException;
 import java.net.URI;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;

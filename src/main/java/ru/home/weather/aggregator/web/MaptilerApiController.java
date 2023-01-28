@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import ru.home.weather.aggregator.domain.City;
-import ru.home.weather.aggregator.service.MaptilerParser;
+import ru.home.weather.aggregator.service.parser.MaptilerParser;
 
 import java.io.IOException;
 import java.net.URI;

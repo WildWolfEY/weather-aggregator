@@ -11,7 +11,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.service.YandexPogodaParser;
+import ru.home.weather.aggregator.service.parser.YandexPogodaParser;
 
 import java.io.IOException;
 import java.net.URI;

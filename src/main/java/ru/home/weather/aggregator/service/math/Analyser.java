@@ -1,4 +1,4 @@
-package ru.home.weather.aggregator.service;
+package ru.home.weather.aggregator.service.math;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +20,9 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -78,7 +75,7 @@ public class Analyser {
             TreeSet<Pair> forecastWithObservation = new TreeSet<>(new Comparator<Pair>() {
                 @Override
                 public int compare(Pair pair1, Pair pair2) {
-                    return pair1.getDays() >= pair2.getDays() ? 1 : -1;
+                    return pair1.getPrescription() >= pair2.getPrescription() ? 1 : -1;
                 }
             });
 
@@ -181,23 +178,23 @@ public class Analyser {
         Map<Float, Float> temperatureMap = new HashMap<>();
         Map<Integer, Integer> intensityMap = new HashMap<>();
         for (Pair pair : forecastWithObservation) {
-            if (days == pair.getDays()) {
+            if (days == pair.getPrescription()) {
                 temperatureMap.put(pair.getForecast().getTemperature(), pair.getObservation().getTemperature());
                 intensityMap.put(pair.getForecast().getIntensity().ordinal(), pair.getObservation().getIntensity().ordinal());
 
             } else {
                 Statistic statistic = calculate(temperatureMap, intensityMap);
-                statistic.setCountDays(days);
+                statistic.setPrescription(days);
                 statistics.add(statistic);
                 temperatureMap.clear();
                 intensityMap.clear();
-                days = pair.getDays();
+                days = pair.getPrescription();
             }
         }
         if(!temperatureMap.isEmpty())
         {
             Statistic statistic = calculate(temperatureMap, intensityMap);
-            statistic.setCountDays(days);
+            statistic.setPrescription(days);
             statistics.add(statistic);
             temperatureMap.clear();
             intensityMap.clear();

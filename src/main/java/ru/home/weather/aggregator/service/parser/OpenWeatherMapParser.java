@@ -1,4 +1,4 @@
-package ru.home.weather.aggregator.service;
+package ru.home.weather.aggregator.service.parser;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,6 +13,7 @@ import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
+import ru.home.weather.aggregator.service.IntensityDeterminant;
 
 import java.net.URI;
 import java.time.Instant;

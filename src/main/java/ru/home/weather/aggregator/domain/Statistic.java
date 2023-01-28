@@ -36,10 +36,13 @@ public class Statistic {
     @Id
     @Column(name = "id_statistic")
     @GeneratedValue(strategy = GenerationType.AUTO)
+    //Своя стратегия генерации, в зависимости от id Indication и id FactWeather
     private long id;
     private double standartDeviationTemperature;
     private double standartDeviationIntencity;
+    @Deprecated
     private Instant startPeriod;
+    @Deprecated
     private Instant endPeriod;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_website")
@@ -47,5 +50,5 @@ public class Statistic {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_city")
     private City city;
-    private int countDays;
+    private int prescription;
 }

@@ -14,7 +14,7 @@ import java.util.List;
 @Service
 public class IntensityDeterminant {
     public Intensity getIntensity(String condition) {
-        log.debug("getMillimeters(String condition), параметр: {}", condition);
+        log.debug("getIntensity(String condition), параметр: {}", condition);
         for(String item: light)
         {
            if(condition.toLowerCase().contains(item)){
@@ -38,5 +38,4 @@ public class IntensityDeterminant {
     private List<String> light = Arrays.asList("drizzle","морось","light","небольшой");
     private List<String> heavy = Arrays.asList("сильный","ливень","снегопад","heavy","shower");
     private List<String> normal =  Arrays.asList("дождь","снег","град","rain","snow","hail");
-
 }
