@@ -23,6 +23,7 @@ public class WebSite {
     @Column(name = "id_website")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
+    @Getter
     private String title;
     @Column(unique = true, nullable = false)
     private String http;

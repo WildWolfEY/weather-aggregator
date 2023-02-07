@@ -14,10 +14,13 @@ public interface IndicationRepository extends CrudRepository<Indication, Long> {
     @Transactional
     void deleteByDateIndicateBefore(Instant expiryDate);
 
-    List<Indication> findByDateIndicateAfter(Instant date);
+    @Transactional
+    void deleteByWebSiteIsNullAndIsForecastAndDateIndicateBetween(boolean isForecast, Instant startDate, Instant endDate);
+
 
     List<Indication> findByWebSiteAndCityAndIsForecastAndDateIndicateBetween(WebSite webSite, City city, boolean isForecast, Instant startDate, Instant endDate);
 
     List<Indication> findByCityAndIsForecastAndDateIndicateBetween(City city, boolean isForecast, Instant startDate, Instant endDate);
 
+    List<Indication> findByWebSiteIsNullAndCityAndIsForecastAndDateIndicateBetween(City city, boolean isForecast, Instant startDate, Instant endDate);
 }

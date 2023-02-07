@@ -9,10 +9,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.home.weather.aggregator.domain.City;
+import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.CityRepository;
+import ru.home.weather.aggregator.service.math.RatingCalculator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -23,11 +26,13 @@ import java.util.Set;
 @Log4j2
 public class UIController {
     @Autowired
-    Map<String,String > countries;
+    Map<String, String> countries;
     @Autowired
     CityRepository cityRepository;
     @Autowired
     MaptilerApiController maptilerApiController;
+    @Autowired
+    RatingCalculator ratingCalculator;
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/")
@@ -67,6 +72,25 @@ public class UIController {
             log.warn("Ошибка при добавлении города {}, {}", exception.toString(), exception.getMessage());
             handleException(exception.getMessage(), model);
             return (goToCity(model));
+        }
+        return main(model);
+    }
+
+    @GetMapping("/rating")
+    public String getRating(@RequestParam(required = false) String cityId,
+                            @RequestParam(required = false) int prescription,
+                            @RequestParam(required = false) int temperatureOrPrecipitation,
+                            Model model) throws Exception {
+        try {
+            cityId = cityId.replaceAll(" ", "");
+            Long id = Long.valueOf(cityId);
+            City city = cityId.equals("0") ? null : cityRepository.findById(id).get();
+
+            List<WebSite> webSites = ratingCalculator.getRating(city, prescription, temperatureOrPrecipitation);
+            model.addAttribute("websites", webSites);
+        } catch (Exception exception) {
+            log.warn("Ошибка при подсчёте рейтинга", exception.toString(), exception.getMessage());
+            throw new Exception("Ошибка при подсчёте рейтинга");
         }
         return main(model);
     }

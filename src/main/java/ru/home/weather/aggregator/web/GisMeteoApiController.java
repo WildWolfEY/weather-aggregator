@@ -29,7 +29,6 @@ public class GisMeteoApiController implements WeatherApiController {
     @Autowired
     GisMeteoParser parser;
 
-    @Override
     public List<Indication> getForecasts(City city) {
         log.debug("getForecasts(City city), параметр:{}", city);
         List<Indication> indications = new ArrayList<>();
@@ -58,7 +57,7 @@ public class GisMeteoApiController implements WeatherApiController {
         Indication indication = new Indication();
         try {
             getGoogleContent(city);
-            URI uri = URI.create(parser.findLinkGisMeteo(getGoogleContent(city)).toString().concat("now"));
+            URI uri = URI.create(parser.findLinkGisMeteo(getGoogleContent(city)).toString().concat("/now"));
             try {
                 parser.parseObservationIndication(getGisMeteoContent(uri));
             } catch (ParseException exception) {
@@ -79,16 +78,14 @@ public class GisMeteoApiController implements WeatherApiController {
             if (i == 1) {
                 uriList.add(URI.create(uri.toString()));
             } else if (i == 2) {
-                uriList.add(URI.create(uri.toString() + "tomorrow/"));
+                uriList.add(URI.create(uri.toString()+"/" + "tomorrow/"));
             } else {
-                uriList.add(URI.create(uri.toString() + i + "-day/"));
+                uriList.add(URI.create(uri.toString()+"/" + i + "-day/"));
             }
         }
         log.debug("результат: {}", uriList);
         return uriList;
     }
-
-
     //Метод-заглушка
     private Document getGoogleContent2(City city) throws IOException {
         File file = new File("D:\\Лена\\Java\\weather-aggregator\\gismeteo polevskoy.html");

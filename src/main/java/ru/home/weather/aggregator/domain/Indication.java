@@ -29,7 +29,7 @@ public class Indication implements Comparable<Indication> {
     @Column(name = "id_indication")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
-    private float temperature;
+    private double temperature;
     @Deprecated
     private float millimeters;
     private Intensity intensity;
@@ -38,6 +38,7 @@ public class Indication implements Comparable<Indication> {
     @Setter
     private WebSite webSite;
     private Instant dateRequest;
+    @Setter
     private Instant dateIndicate;
     @Setter
     private boolean isForecast;

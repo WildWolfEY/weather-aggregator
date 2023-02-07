@@ -120,7 +120,7 @@ public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
     @Getter
     @JsonIgnoreProperties(ignoreUnknown = true)
     @ToString
-    public static class CityRaw {
+    private static class CityRaw {
         String name;
         Map<String, String> local_names;
         float lat;
@@ -132,7 +132,7 @@ public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
     @Getter
     @JsonIgnoreProperties(ignoreUnknown = true)
     @ToString
-    public static class IndicationsRaw {
+    private static class IndicationsRaw {
         WeatherData[] list;
     }
 

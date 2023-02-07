@@ -8,15 +8,13 @@ import org.springframework.stereotype.Component;
 /**
  * @author Elena Demeneva
  */
-@Component
-@Scope(value = "prototype")
 @Getter
-public class Pair {
+public class PairForecastObservation {
     private int prescription;
     private Indication forecast;
     private Indication observation;
 
-    public Pair(Indication forecast, Indication observation) {
+    public PairForecastObservation(Indication forecast, Indication observation) {
         setForecast(forecast);
         this.observation = observation;
     }

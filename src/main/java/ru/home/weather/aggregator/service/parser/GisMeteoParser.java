@@ -173,11 +173,16 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
             log.warn("не нашли нужную ссылку, содержащую {}", pattern);
             throw new NoSuchElementException("не нашли нужную ссылку, содержащую " + pattern);
         }
-        String uri = link.get().substring(link.get().indexOf(pattern), link.get().indexOf("&"));
+        URI uri = URI.create(link.get().substring(link.get().indexOf(pattern), link.get().indexOf("&")));
+        String host = uri.getHost();
+        String path = uri.getPath();
+        String[] partsOfPath = path.split("/");
+        if (partsOfPath.length > 1) {
+            uri = URI.create("https://".concat(host).concat("/").concat(partsOfPath[1]));
+        }
         log.debug("результат: {}", uri);
-        return URI.create(uri);
+        return uri;
     }
-
     @Data
     private static class ForecastWeatherData {
         List<Instant> forecastDates = new ArrayList<>();

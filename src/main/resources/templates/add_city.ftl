@@ -12,7 +12,6 @@
     <button type="submit">Найти</button>
 </form>
 <#if cities??>
-<!--/ya/add-data-->
 <form action="/city/add">
     <#if cities?has_content>
     <select name="cityJson">

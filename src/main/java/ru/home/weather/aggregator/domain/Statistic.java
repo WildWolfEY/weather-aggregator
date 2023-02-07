@@ -10,16 +10,9 @@ import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.util.Pair;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * @author Elena Demeneva
@@ -32,23 +25,47 @@ import java.time.Instant;
 @Getter
 @Setter
 @ToString
-public class Statistic {
+@EqualsAndHashCode(exclude = {"id", "standartDeviationTemperature","standartDeviationIntencity","prescription"})
+
+@SqlResultSetMapping(
+        name = "findAllDataMapping",
+        classes = @ConstructorResult(
+                targetClass = Statistic.class,
+                columns = {
+                        @ColumnResult(name = "first"),
+                        @ColumnResult(name = "second")
+                }
+        )
+)
+@NamedNativeQuery(name = "Statistic.findAllDataMapping", resultClass = Statistic.class, resultSetMapping = "findAllDataMapping",
+        query = "select 1/avg(t.t) as first, 1/avg(t.i) as second" +
+                "from " +
+                "(select avg(s.standart_deviation_temperature) as t, avg(s.standart_deviation_intencity) as i from statistic s  " +
+                "group by prescription, id_website, id_city) t"
+)
+public class Statistic{
     @Id
     @Column(name = "id_statistic")
     @GeneratedValue(strategy = GenerationType.AUTO)
-    //Своя стратегия генерации, в зависимости от id Indication и id FactWeather
     private long id;
     private double standartDeviationTemperature;
     private double standartDeviationIntencity;
-    @Deprecated
-    private Instant startPeriod;
-    @Deprecated
-    private Instant endPeriod;
+    private int prescription;
+
+    private LocalDate startPeriod;
+    private LocalDate endPeriod;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_website")
     private WebSite webSite;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_city")
     private City city;
-    private int prescription;
+
+
+
+
+        double first;
+        double second;
+
+
 }

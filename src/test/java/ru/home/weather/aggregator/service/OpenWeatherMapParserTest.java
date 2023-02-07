@@ -56,7 +56,6 @@ class OpenWeatherMapParserTest {
             Assert.isTrue(indication.getDateIndicate().equals(Instant.ofEpochSecond(1666688400)), "Неверная дата взятия показаний");
             Assert.notNull(indication.getDateRequest(), "Дата запроса равна null");
             Assert.isTrue(indication.isForecast(), "Вместо прогноза указано, что это наблюдение");
-            Assert.isTrue(Float.valueOf(indication.getMillimeters()).equals(0.41f), "Неверно указано количество осадков");
             Assert.isTrue((int)(indication.getTemperature()*100) == 277, "Неверно указана температура");
             Assert.notNull(indication.getWebSite(), "Не указан вебсайт, с которого взяты данные");
         } catch (JsonProcessingException exception) {
@@ -75,8 +74,7 @@ class OpenWeatherMapParserTest {
             Assert.isTrue(indication.getDateIndicate().equals(Instant.ofEpochSecond(1667996679)), "Неверная дата взятия показаний");
             Assert.notNull(indication.getDateRequest(), "Дата запроса равна null");
             Assert.isTrue(!indication.isForecast(), "Вместо наблюдения указано, что это прогноз");
-            Assert.isTrue(Float.valueOf(indication.getMillimeters()).equals(Float.valueOf(0)), "Неверно указано количество осадков");
-            Assert.isTrue(Float.valueOf(indication.getTemperature()).equals(Float.valueOf(0.36999512f)), "Неверно указана температура");
+            Assert.isTrue(Double.valueOf(indication.getTemperature()).equals(Float.valueOf(0.36999512f)), "Неверно указана температура");
             Assert.notNull(indication.getWebSite(), "Не указан вебсайт, с которого взяты данные");
         } catch (JsonProcessingException exception) {
             throw new RuntimeJsonMappingException("Ошибка парсинга Json строки");
