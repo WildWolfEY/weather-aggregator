@@ -2,15 +2,17 @@ package ru.home.weather.aggregator.domain;
 
 
 import lombok.Getter;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import lombok.ToString;
+
+import java.time.temporal.ChronoUnit;
 
 /**
  * @author Elena Demeneva
  */
 @Getter
+@ToString
 public class PairForecastObservation {
-    private int prescription;
+    private int antiquity;
     private Indication forecast;
     private Indication observation;
 
@@ -21,7 +23,7 @@ public class PairForecastObservation {
 
     private void setForecast(Indication forecast) {
         this.forecast = forecast;
-        prescription = Math.abs(Math.round((forecast.getDateIndicate().getEpochSecond() - forecast.getDateRequest().getEpochSecond()) / (60 * 60 * 24)));
-    }
+        antiquity = (int)ChronoUnit.DAYS.between(forecast.getDateIndicate(),forecast.getDateRequest());
+     }
 
 }

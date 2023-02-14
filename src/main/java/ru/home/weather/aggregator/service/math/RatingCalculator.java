@@ -1,7 +1,5 @@
 package ru.home.weather.aggregator.service.math;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,10 +8,6 @@ import ru.home.weather.aggregator.domain.Statistic;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.StatisticRepository;
 
-import javax.persistence.ColumnResult;
-import javax.persistence.ConstructorResult;
-import javax.persistence.NamedNativeQuery;
-import javax.persistence.SqlResultSetMapping;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,27 +23,68 @@ public class RatingCalculator {
     @Autowired
     StandartDeviationCalculator standartDeviationCalculator;
 
-    public List<WebSite> getRating(City city, int prescription, int temperatureOrPrecipitation) {
-        List<Statistic> statistics = new ArrayList<>();
-        if (city != null) {
-            if (prescription != 0) {
-                statistics = statisticRepository.findByCityAndPrescription(city, prescription);
-            } else {
-                statistics = statisticRepository.findByCity(city);
-            }
-        } else if (prescription != 0) {
-            statistics = statisticRepository.findByPrescription(prescription);
-        } else {
-            statistics = statisticRepository.findAll();
-        }
-        List<WebSite> webSites = calculateRating(statistics, temperatureOrPrecipitation);
-        return webSites;
+    public List<WebSite> getRating(City city, int antiquity, int moreImportantIndicator) {
+        log.debug("getRating(City city, int antiquity, int moreImportantIndicator)), параметры:{},{},{}", city, antiquity, moreImportantIndicator);
+        List<Statistic> statistics = getStatisticByCityAndAntiquity(city, antiquity);
+        return calculateRating(statistics, moreImportantIndicator);
     }
 
-    private List<WebSite> calculateRating(List<Statistic> statistics, int temperatureOrPrecipitation) {
-        Map<WebSite, List<Statistic>> groupingStatistic = new HashMap<>();
+    private List<Statistic> getStatisticByCityAndAntiquity(City city, int antiquity) {
+        log.debug("getStatisticByCityAndAntiquity(City city, int antiquity), параметры:{},{}", city, antiquity);
+        if (city != null && antiquity != 0) {
+            log.debug("результат: findByCityAndAntiquity");
+            return statisticRepository.findByCityAndAntiquity(city, antiquity);
+        } else if (city != null) {
+            log.debug("результат: findByCity");
+            return statisticRepository.findByCity(city);
+        } else if (antiquity != 0) {
+            log.debug("результат: findByAntiquity");
+            return statisticRepository.findByAntiquity(antiquity);
+        } else {
+            log.debug("результат: findAll");
+            return statisticRepository.findAll();
+        }
+    }
+
+    private List<WebSite> calculateRating(List<Statistic> statistics, int moreImportantIndicator) {
+        log.debug("calculateRating(List<Statistic> statistics, int moreImportantIndicator), параметры:{},{}", statistics, moreImportantIndicator);
+        Map<WebSite, List<Statistic>> groupingStatistic = groupStatisticByWebsite(statistics);
         Map<WebSite, Double> webSiteAndstandartDeviations = new HashMap<>();
-        List<WebSite> webSites = new ArrayList<>();
+        for (Map.Entry<WebSite, List<Statistic>> groupStatisticByWebSite : groupingStatistic.entrySet()) {
+            double value = calculateStandartDeviation(groupStatisticByWebSite.getValue(), moreImportantIndicator);
+            webSiteAndstandartDeviations.put(groupStatisticByWebSite.getKey(), value);
+            log.debug("adding:{} {}",groupStatisticByWebSite.getKey(), value);
+        }
+        return webSiteAndstandartDeviations.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getValue)).map(Map.Entry::getKey).collect(Collectors.toList());
+    }
+
+    private Double calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator) {
+        log.debug("calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator), параметры:{},{}", groupedStatistic, moreImportantIndicator);
+        double result = 0;
+        if (moreImportantIndicator == 1) {
+            result = standartDeviationCalculator.calculateAverage(
+                    groupedStatistic.stream().map(Statistic::getStandartDeviationTemperature).collect(Collectors.toList()));
+        } else if (moreImportantIndicator == 2) {
+            result = standartDeviationCalculator.calculateAverage(
+                    groupedStatistic.stream().map(Statistic::getStandartDeviationIntencity).collect(Collectors.toList()));
+
+        } else {
+            int NORMALIZATION_COEFFICIENT = 10;
+            result = (standartDeviationCalculator.calculateAverage(
+                    groupedStatistic.stream().map(Statistic::getStandartDeviationTemperature).collect(Collectors.toList())))
+                    + (standartDeviationCalculator.calculateAverage(
+                    groupedStatistic.stream().map(Statistic::getStandartDeviationIntencity).collect(Collectors.toList())))
+                    * NORMALIZATION_COEFFICIENT;
+
+        }
+        log.debug("результат: {}", result);
+        return result;
+    }
+
+    private Map<WebSite, List<Statistic>> groupStatisticByWebsite(List<Statistic> statistics) {
+        log.debug("groupStatisticByWebsite(List<Statistic> statistics) , параметры:{}", statistics);
+        Map<WebSite, List<Statistic>> groupingStatistic = new HashMap<>();
         for (Statistic statistic : statistics) {
             if (groupingStatistic.containsKey(statistic.getWebSite())) {
                 groupingStatistic.get(statistic.getWebSite()).add(statistic);
@@ -59,56 +94,7 @@ public class RatingCalculator {
                 groupingStatistic.put(statistic.getWebSite(), currentList);
             }
         }
-        for (Map.Entry<WebSite, List<Statistic>> groupStatistic : groupingStatistic.entrySet()) {
-            double resultStandartDeviation = 0;
-            if (temperatureOrPrecipitation == 1) {
-                resultStandartDeviation = standartDeviationCalculator.calculateAverage(
-                        groupStatistic.getValue().stream().map(x -> x.getStandartDeviationTemperature()).collect(Collectors.toList()));
-            } else if (temperatureOrPrecipitation == 2) {
-                resultStandartDeviation =  standartDeviationCalculator.calculateAverage(
-                        groupStatistic.getValue().stream().map(x -> x.getStandartDeviationIntencity()).collect(Collectors.toList()));
-
-            } else {
-
-                List<Statistic> coeff = statisticRepository.findAllOfStatistic();
-                double k1 = coeff.get(0).getFirst();
-                double k2 = coeff.get(0).getSecond();
-//               PairNumber coefficients = statisticRepository.calculateCoefficient();
-                resultStandartDeviation = ((standartDeviationCalculator.calculateAverage(
-                        groupStatistic.getValue().stream().map(x -> x.getStandartDeviationTemperature()).collect(Collectors.toList())))
-                        *k1
-               + (standartDeviationCalculator.calculateAverage(
-                        groupStatistic.getValue().stream().map(x -> x.getStandartDeviationIntencity()).collect(Collectors.toList())))
-                *k2)/2;
-
-            }
-            webSiteAndstandartDeviations.put(groupStatistic.getKey(), resultStandartDeviation);
-        }
-        webSites = webSiteAndstandartDeviations.entrySet().stream()
-                .sorted(new Comparator<Map.Entry<WebSite, Double>>() {
-                    @Override
-                    public int compare(Map.Entry<WebSite, Double> o1, Map.Entry<WebSite, Double> o2) {
-                        return o1.getValue().compareTo(o2.getValue());
-                    }
-                }).map(x -> x.getKey()).collect(Collectors.toList());
-        return webSites;
+        log.debug("результат:{}", groupingStatistic);
+        return groupingStatistic;
     }
-
-//    @SqlResultSetMapping(name = "customDataMapping",
-//            classes = @ConstructorResult(
-//                    targetClass = CustomData.class,
-//                    columns = {
-//                            @ColumnResult(name = "first", type = Double.class),
-//                            @ColumnResult(name = "second", type = Double.class),
-//                    }
-//            )
-//    )
-//    @NamedNativeQuery(name = "customDataMapping", resultClass = RatingCalculator.CustomData.class, resultSetMapping ="customDataMapping", query =
-//            "select avg(t.t) as first, avg(t.i) as second " +
-//                    "from " +
-//                    "(select 1/avg(s.standart_deviation_temperature) as t, 1/avg(s.standart_deviation_intencity) as i from statistic s  " +
-//                    "group by prescription, id_website, id_city) t")
-
-
-
 }

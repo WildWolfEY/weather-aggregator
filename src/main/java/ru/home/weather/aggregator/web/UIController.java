@@ -15,8 +15,6 @@ import ru.home.weather.aggregator.service.math.RatingCalculator;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * @author Elena Demeneva
@@ -36,7 +34,7 @@ public class UIController {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/")
-    public String main(Model model) {
+    public String goToMain(Model model) {
         model.addAttribute("cities", cityRepository.findAll());
         return "main";
     }
@@ -73,26 +71,31 @@ public class UIController {
             handleException(exception.getMessage(), model);
             return (goToCity(model));
         }
-        return main(model);
+        return goToMain(model);
     }
 
     @GetMapping("/rating")
-    public String getRating(@RequestParam(required = false) String cityId,
-                            @RequestParam(required = false) int prescription,
-                            @RequestParam(required = false) int temperatureOrPrecipitation,
+    public String getRating(@RequestParam String cityId,
+                            @RequestParam int antiquity,
+                            @RequestParam int temperatureOrPrecipitation,
                             Model model) throws Exception {
         try {
             cityId = cityId.replaceAll(" ", "");
             Long id = Long.valueOf(cityId);
             City city = cityId.equals("0") ? null : cityRepository.findById(id).get();
 
-            List<WebSite> webSites = ratingCalculator.getRating(city, prescription, temperatureOrPrecipitation);
+            List<WebSite> webSites = ratingCalculator.getRating(city, antiquity, temperatureOrPrecipitation);
+            model.addAttribute("city", city);
+            model.addAttribute("antiquity", antiquity);
+            model.addAttribute("temperatureOrPrecipitation", temperatureOrPrecipitation);
             model.addAttribute("websites", webSites);
+            log.debug("результат:{}", webSites);
         } catch (Exception exception) {
             log.warn("Ошибка при подсчёте рейтинга", exception.toString(), exception.getMessage());
-            throw new Exception("Ошибка при подсчёте рейтинга");
+            handleException(exception.getMessage(), model);
+            return goToMain(model);
         }
-        return main(model);
+        return goToMain(model);
     }
 
     private void handleException(String message, Model model) {
