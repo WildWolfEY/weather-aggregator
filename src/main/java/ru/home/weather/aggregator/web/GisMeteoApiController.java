@@ -12,16 +12,11 @@ import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
 import ru.home.weather.aggregator.service.parser.GisMeteoParser;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * @author Elena Demeneva
- */
 
 @Service
 @Log4j2
@@ -43,7 +38,8 @@ public class GisMeteoApiController implements WeatherApiController {
                 }
             }
         } catch (Exception exception) {
-            log.warn("Не удалось корректно выполнить запрос getForecasts(City city) с параметром:{}. Ошибка {},{}", city, exception.toString(), exception.getMessage());
+            log.warn("Не удалось корректно выполнить запрос getForecasts(City city) с параметром:{}." +
+                    " Ошибка {},{}", city, exception.toString(), exception.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу ");
         }
         indications.forEach(x -> x.setCity(city));
@@ -64,7 +60,8 @@ public class GisMeteoApiController implements WeatherApiController {
                 log.warn("адрес странички:{}", uri);
             }
         } catch (Exception exception) {
-            log.warn("Не удалось корректно выполнить запрос getForecasts(City city) с параметром:{}. Ошибка {},{}", city, exception.toString(), exception.getMessage());
+            log.warn("Не удалось корректно выполнить запрос getForecasts(City city) с параметром:{}." +
+                    " Ошибка {},{}", city, exception.toString(), exception.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу ");
         }
         log.debug("результат: {}", indication);
@@ -78,24 +75,13 @@ public class GisMeteoApiController implements WeatherApiController {
             if (i == 1) {
                 uriList.add(URI.create(uri.toString()));
             } else if (i == 2) {
-                uriList.add(URI.create(uri.toString()+"/" + "tomorrow/"));
+                uriList.add(URI.create(uri.toString() + "/" + "tomorrow/"));
             } else {
-                uriList.add(URI.create(uri.toString()+"/" + i + "-day/"));
+                uriList.add(URI.create(uri.toString() + "/" + i + "-day/"));
             }
         }
         log.debug("результат: {}", uriList);
         return uriList;
-    }
-    //Метод-заглушка
-    private Document getGoogleContent2(City city) throws IOException {
-        File file = new File("D:\\Лена\\Java\\weather-aggregator\\gismeteo polevskoy.html");
-        return Jsoup.parse(file);
-    }
-
-    //Метод-заглушка
-    private Document getGisMeteoContent2(URI uri) throws IOException {
-        File file = new File("D:\\Лена\\Java\\weather-aggregator\\view-source_https___www.gismeteo.ru_weather-colombo-5800_3-day_.html");
-        return Jsoup.parse(file);
     }
 
     private Document getGoogleContent(City city) throws IOException {

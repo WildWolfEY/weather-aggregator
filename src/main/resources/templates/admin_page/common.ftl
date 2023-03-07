@@ -9,6 +9,7 @@
 <div>
     <a href="/admin/websites">Сайты</a>
     <a href="/admin/weathers">Погода</a>
+    <a href="/admin/keys">Ключи</a>
 </div>
 <#nested>
 </body>

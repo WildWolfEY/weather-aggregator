@@ -18,10 +18,6 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * @author Elena Demeneva
- */
-
 @Service
 @Log4j2
 public class MaptilerApiController {
@@ -33,7 +29,8 @@ public class MaptilerApiController {
     MaptilerParser parser;
 
     public List<City> getCities(String cityName, String area, String country) {
-        log.debug("getCities(String cityName, String area, String country), параметры {},{},{}", cityName, area, country);
+        log.debug("getCities(String cityName, String area, String country), параметры {},{},{}",
+                cityName, area, country);
         int httpStatus;
         try {
             HttpResponse<String> httpResponse = getCityHttpResponse(cityName, area, country);
@@ -43,13 +40,16 @@ public class MaptilerApiController {
             }
         } catch (JsonProcessingException exception) {
             log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
-            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка парсинга ответа от api.maptiler.com");
+            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Ошибка парсинга ответа от api.maptiler.com");
         } catch (Exception exception) {
             log.warn("ошибка {} {}", exception.toString(), exception.getMessage());
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Ошибка при выполнении запроса к серверу api.maptiler.com");
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                    "Ошибка при выполнении запроса к серверу api.maptiler.com");
         }
         log.warn("ошибка в ответе от сервера api.maptiler.com httpStatus ={}", httpStatus);
-        throw new HttpClientErrorException(HttpStatus.valueOf(httpStatus), "Ошибка в ответе от сервера api.maptiler.com");
+        throw new HttpClientErrorException(HttpStatus.valueOf(httpStatus),
+                "Ошибка в ответе от сервера api.maptiler.com");
     }
 
     private HttpResponse<String> getCityHttpResponse(String cityName, String area, String country)

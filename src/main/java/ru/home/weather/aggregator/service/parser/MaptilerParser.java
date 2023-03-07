@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * @author Elena Demeneva
- */
 @Service
 @Log4j2
 public class MaptilerParser {
@@ -44,12 +41,7 @@ public class MaptilerParser {
                 if (cityRaw.getName() != null) {
                     localNames.add(cityRaw.getName());
                 }
-//            if (cityRaw.getNameRu() != null) {
-//                localNames.add(cityRaw.getNameRu());
-//            }
-//            if (cityRaw.getNameEn() != null) {
-//                localNames.add(cityRaw.getNameEn());
-//            }
+
                 City city = City.builder()
                         .names(localNames)
                         .area(cityRaw.findArea().isPresent() ? cityRaw.findArea().get().getText() : null)
@@ -57,9 +49,10 @@ public class MaptilerParser {
                         .country(countries.get(country))
                         .longitude(cityRaw.getCenter()[0])
                         .latitude(cityRaw.getCenter()[1])
-                        .placeNameRu(cityRaw.matching_place_name == null ? cityRaw.place_name : cityRaw.matching_place_name)
+                        .placeNameRu(
+                                cityRaw.matching_place_name == null ? cityRaw.place_name : cityRaw.matching_place_name)
                         .build();
-                city.toJson();
+                city.generateJsonString();
                 cities.add(city);
                 log.trace("adding city: {}", city);
             }
@@ -74,16 +67,6 @@ public class MaptilerParser {
     private static class FeatureCollection {
         private Feature[] features;
         private String[] query;
-
-//        protected List<Feature> findCities() {
-//            List<Feature> cities = new ArrayList<>();
-//            for (Feature feature : features) {
-//                if (feature.isCityType()) {
-//                    cities.add(feature);
-//                }
-//            }
-//            return cities;
-//        }
     }
 
     @Data
@@ -99,14 +82,6 @@ public class MaptilerParser {
         @JsonProperty(value = "matching_text")
         String nameRu;
         String matching_place_name;
-//        @JsonProperty(value = "text_ru")
-//        String nameRu;
-//        @JsonProperty(value = "text_en")
-//        String nameEn;
-//        @JsonProperty(value = "place_name_ru")
-//        String descriptionRu;
-//        @JsonProperty(value = "place_name_en")
-//        String descriptionEn;
 
         protected Optional<Context> findArea() {
             return Optional.ofNullable(find("level04."));
@@ -121,7 +96,6 @@ public class MaptilerParser {
         }
 
         protected boolean isCityType() {
-            //List<String> types = Arrays.asList(place_type);
             return properties.getType().toLowerCase().equals("town") ||
                     properties.getType().toLowerCase().equals("village") ||
                     properties.getType().toLowerCase().equals("city") ||

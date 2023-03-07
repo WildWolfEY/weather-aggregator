@@ -14,14 +14,14 @@ public class StandartDeviationCalculator {
         double sum = 0;
         for (PairNumber element : sequence) {
             double delta = 0;
-            if (element.getFirst() instanceof Integer) {
-                delta = element.getFirst().intValue() - element.getSecond().intValue();
-            } else if (element.getFirst() instanceof Float) {
-                delta = element.getFirst().floatValue() - element.getSecond().floatValue();
-            } else if (element.getFirst() instanceof Double) {
-                delta = element.getFirst().doubleValue() - element.getSecond().doubleValue();
-            } else if (element.getFirst() instanceof Long) {
-                delta = element.getFirst().longValue() - element.getSecond().longValue();
+            if (element.getFirstNumber() instanceof Integer) {
+                delta = element.getFirstNumber().intValue() - element.getSecondNumber().intValue();
+            } else if (element.getFirstNumber() instanceof Float) {
+                delta = element.getFirstNumber().floatValue() - element.getSecondNumber().floatValue();
+            } else if (element.getFirstNumber() instanceof Double) {
+                delta = element.getFirstNumber().doubleValue() - element.getSecondNumber().doubleValue();
+            } else if (element.getFirstNumber() instanceof Long) {
+                delta = element.getFirstNumber().longValue() - element.getSecondNumber().longValue();
             }
             sum += Math.pow(delta, 2);
         }

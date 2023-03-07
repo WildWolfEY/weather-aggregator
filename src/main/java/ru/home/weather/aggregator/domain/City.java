@@ -2,7 +2,12 @@ package ru.home.weather.aggregator.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -17,10 +22,6 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import java.util.Set;
-
-/**
- * @author Elena Demeneva
- */
 
 @Entity
 @Table(name = "cities", uniqueConstraints = @UniqueConstraint(columnNames = {"latitude", "longitude"}))
@@ -51,7 +52,10 @@ public class City {
     @Transient
     private String json;
 
-    public void toJson() {
+    /**
+     *
+     */
+    public void generateJsonString() {
         try {
             json = mapper.writeValueAsString(this);
         } catch (JsonProcessingException e) {

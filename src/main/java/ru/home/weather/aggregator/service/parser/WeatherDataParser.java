@@ -6,9 +6,6 @@ import ru.home.weather.aggregator.domain.Indication;
 import java.text.ParseException;
 import java.util.List;
 
-/**
- * @author Elena Demeneva
- */
 public interface WeatherDataParser<T, E> {
     List<Indication> parseForecastIndications(T data) throws JsonProcessingException, ParseException;
 

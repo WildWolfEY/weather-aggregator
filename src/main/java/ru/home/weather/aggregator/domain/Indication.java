@@ -1,6 +1,12 @@
 package ru.home.weather.aggregator.domain;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,9 +19,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import java.time.Instant;
 
-/**
- * @author Elena Demeneva
- */
 @Entity
 @Table(name = "indications")
 @Builder
@@ -30,9 +33,7 @@ public class Indication implements Comparable<Indication> {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
     private double temperature;
-    @Deprecated
-    private float millimeters;
-    private Intensity intensity;
+    private Precipitation precipitation;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_website")
     @Setter
@@ -49,6 +50,6 @@ public class Indication implements Comparable<Indication> {
 
     @Override
     public int compareTo(Indication indication) {
-        return this.getDateIndicate().compareTo(indication.getDateIndicate());
+        return this.dateIndicate.compareTo(indication.dateIndicate);
     }
 }

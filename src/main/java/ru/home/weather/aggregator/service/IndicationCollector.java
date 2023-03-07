@@ -17,11 +17,6 @@ import ru.home.weather.aggregator.web.OpenWeatherMapApiController;
 import ru.home.weather.aggregator.web.YandexPogodaApiController;
 
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-
-/**
- * @author Elena Demeneva
- */
 
 @EnableScheduling
 @Service
@@ -46,7 +41,6 @@ public class IndicationCollector {
     ObservationAgregator observationAgregator;
 
     @Scheduled(cron = "${scheduler.interval.forecasts}")
-    //@Scheduled (fixedDelay = 5*60*1000)
     public void saveForecasts() {
         log.debug("saveForecasts()");
         for (City city : cityRepository.findAll()) {
@@ -75,7 +69,7 @@ public class IndicationCollector {
             try {
                 indicationRepository.save(openWeatherMapApiController.getObservation(city));
             } catch (Exception exception) {
-                log.warn("Не удалось корректно выполнить запрос saveObservations для WeatherMap");
+                log.warn("Не удалось корректно выполнить запрос saveObservations для WeatherMap", exception);
             }
             try {
                 indicationRepository.save(yandexPogodaApiController.getObservation(city));
@@ -113,10 +107,5 @@ public class IndicationCollector {
         } catch (Exception exception) {
             log.warn("Не удалось посчитать среднее значение по наблюдениям");
         }
-//        try {
-//            //indicationRepository.deleteByWebSiteIsNullAndIsForecastAndDateIndicateBetween(false, dateStart.atStartOfDay().toInstant(ZoneOffset.UTC),dateEnd.atStartOfDay().toInstant(ZoneOffset.UTC));
-//        } catch (Exception exception) {
-//            log.warn("Не удалось удалить наблюдения");
-//        }
     }
 }

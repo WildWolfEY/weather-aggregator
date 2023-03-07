@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.domain.Intensity;
+import ru.home.weather.aggregator.domain.Precipitation;
 import ru.home.weather.aggregator.repository.CityRepository;
 import ru.home.weather.aggregator.repository.IndicationRepository;
 
@@ -19,9 +19,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-/**
- * @author Elena Demeneva
- */
 @Service
 @Log4j2
 public class ObservationAgregator {
@@ -33,10 +30,12 @@ public class ObservationAgregator {
     StandartDeviationCalculator standartDeviationCalculator;
 
     public List<Indication> getAverageObservations(LocalDate dateStart, LocalDate dateEnd) {
-        log.debug("getAverageObservations(LocalDate dateStart, LocalDate dateEnd), параметры:{},{}", dateStart, dateEnd);
+        log.debug("getAverageObservations(LocalDate dateStart, LocalDate dateEnd), параметры:{},{}",
+                dateStart, dateEnd);
         List<Indication> averageObservations = new ArrayList<>();
         for (City city : cityRepository.findAll()) {
-            TreeMap<Instant, List<Indication>> observationsGroupedByTime = getObservationsGroupedByTime(city, dateStart, dateEnd);
+            TreeMap<Instant, List<Indication>> observationsGroupedByTime =
+                    getObservationsGroupedByTime(city, dateStart, dateEnd);
             for (Map.Entry<Instant, List<Indication>> entry : observationsGroupedByTime.entrySet()) {
                 if (!entry.getValue().isEmpty()) {
                     averageObservations.add(createAverageObservation(entry.getValue(), entry.getKey(), city));
@@ -47,8 +46,11 @@ public class ObservationAgregator {
         return averageObservations;
     }
 
-    private TreeMap<Instant, List<Indication>> getObservationsGroupedByTime(City city, LocalDate dateStart, LocalDate dateEnd) {
-        log.debug("getObservationsGroupedByTime(City city, LocalDate dateStart, LocalDate dateEnd, параметры:{},{},{}", city, dateStart, dateEnd);
+    private TreeMap<Instant, List<Indication>> getObservationsGroupedByTime(City city,
+                                                                            LocalDate dateStart,
+                                                                            LocalDate dateEnd) {
+        log.debug("getObservationsGroupedByTime(City city, LocalDate dateStart, LocalDate dateEnd," +
+                " параметры:{},{},{}", city, dateStart, dateEnd);
         TreeMap<Instant, List<Indication>> observationsGroupedByTime = createEmptyTimesMap(dateStart, dateEnd);
         List<Indication> observations = indicationRepository.findByCityAndIsForecastAndDateIndicateBetween(
                 city,
@@ -66,13 +68,18 @@ public class ObservationAgregator {
     }
 
     private Indication createAverageObservation(List<Indication> observations, Instant dateIndicate, City city) {
-        log.debug("createAverageObservation(List<Indication> observations, Instant dateTime, City city), параметры:{},{},{}", observations, dateIndicate, city);
-        double averageTemperature = standartDeviationCalculator.calculateAverage(observations.stream().map(Indication::getTemperature).collect(Collectors.toList()));
-        double averageIntensity = standartDeviationCalculator.calculateAverage(observations.stream().map(x -> x.getIntensity().ordinal()).collect(Collectors.toList()));
+        log.debug("createAverageObservation(List<Indication> observations, Instant dateTime, City city)," +
+                " параметры:{},{},{}", observations, dateIndicate, city);
+        double averageTemperature = standartDeviationCalculator.calculateAverage(observations.stream()
+                .map(Indication::getTemperature)
+                .collect(Collectors.toList()));
+        double averageIntensity = standartDeviationCalculator.calculateAverage(observations.stream()
+                .map(x -> x.getPrecipitation().ordinal())
+                .collect(Collectors.toList()));
         Indication averageObservation = Indication.builder()
                 .dateIndicate(dateIndicate)
                 .temperature(averageTemperature)
-                .intensity(Intensity.values()[(int) Math.round(averageIntensity)])
+                .precipitation(Precipitation.values()[(int) Math.round(averageIntensity)])
                 .isForecast(false)
                 .city(city)
                 .build();
@@ -81,7 +88,8 @@ public class ObservationAgregator {
     }
 
     private TreeMap<Instant, List<Indication>> createEmptyTimesMap(LocalDate dateStart, LocalDate dateEnd) {
-        log.debug("createEmptyTimesMap(LocalDate dateStart, LocalDate dateEnd), параметры:{},{}", dateStart, dateEnd);
+        log.debug("createEmptyTimesMap(LocalDate dateStart, LocalDate dateEnd), параметры:{},{}",
+                dateStart, dateEnd);
         Instant nextTime = dateStart.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant lastTime = dateEnd.atStartOfDay().toInstant(ZoneOffset.UTC);
         TreeMap<Instant, List<Indication>> timesMap = new TreeMap<>();
@@ -94,12 +102,15 @@ public class ObservationAgregator {
     }
 
     private Instant getNearestTime(TreeMap<Instant, List<Indication>> timesMap, Instant dateIndicate) {
-        log.debug("getNearestTime(TreeMap<Instant, List<Indication>> timesMap, Instant dateIndicate), параметры:{},{}", timesMap, dateIndicate);
+        log.debug("getNearestTime(TreeMap<Instant, List<Indication>> timesMap, Instant dateIndicate)," +
+                " параметры:{},{}", timesMap, dateIndicate);
         Instant lowerTime = timesMap.lowerKey(dateIndicate);
         Instant higherTime = timesMap.higherKey(dateIndicate);
-        if (lowerTime != null && higherTime != null) {
-            long deltaLowerTime = lowerTime.getEpochSecond() - dateIndicate.getEpochSecond();
-            long deltaHigherTime = higherTime.getEpochSecond() - dateIndicate.getEpochSecond();
+        if (timesMap.containsKey(dateIndicate)) {
+            return dateIndicate;
+        } else if (lowerTime != null && higherTime != null) {
+            long deltaLowerTime = Math.abs(lowerTime.getEpochSecond() - dateIndicate.getEpochSecond());
+            long deltaHigherTime = Math.abs(higherTime.getEpochSecond() - dateIndicate.getEpochSecond());
             Instant resultTime = deltaLowerTime < deltaHigherTime ? lowerTime : higherTime;
             if (ChronoUnit.HOURS.between(resultTime, dateIndicate) < 3) {
                 log.debug("результат: {}", resultTime);

@@ -5,7 +5,12 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.home.weather.aggregator.domain.*;
+import ru.home.weather.aggregator.domain.City;
+import ru.home.weather.aggregator.domain.Indication;
+import ru.home.weather.aggregator.domain.PairForecastObservation;
+import ru.home.weather.aggregator.domain.PairNumber;
+import ru.home.weather.aggregator.domain.Statistic;
+import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.CityRepository;
 import ru.home.weather.aggregator.repository.IndicationRepository;
 import ru.home.weather.aggregator.repository.StatisticRepository;
@@ -15,13 +20,16 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
 @Log4j2
 public class StatisticCalculator {
-
     @Autowired
     IndicationRepository indicationRepository;
     @Autowired
@@ -41,7 +49,8 @@ public class StatisticCalculator {
                 dateStart.atStartOfDay().toInstant(ZoneOffset.UTC),
                 dateEnd.atStartOfDay().toInstant(ZoneOffset.UTC));
         for (Map.Entry<Key, List<PairForecastObservation>> groupForecastObservation : groupingPairs.entrySet()) {
-            Statistic statistic = calculateStatistic(groupForecastObservation.getKey(), groupForecastObservation.getValue());
+            Statistic statistic =
+                    calculateStatistic(groupForecastObservation.getKey(), groupForecastObservation.getValue());
             statistic.setStartPeriod(dateStart);
             statistic.setEndPeriod(dateEnd);
             if (existStatistics.contains(statistic)) {
@@ -53,15 +62,20 @@ public class StatisticCalculator {
         return statistics;
     }
 
-    private Map<Key, List<PairForecastObservation>> getGroupingForecastsAndObservationsForPeriod(Instant dateStart, Instant dateEnd) {
-        log.debug("getGroupingForecastsAndObservationsForPeriod(Instant dateStart, Instant dateEnd), параметры:{},{}", dateStart, dateEnd);
+    private Map<Key, List<PairForecastObservation>> getGroupingForecastsAndObservationsForPeriod(Instant dateStart,
+                                                                                                 Instant dateEnd) {
+        log.debug("getGroupingForecastsAndObservationsForPeriod(Instant dateStart, Instant dateEnd),"
+                + " параметры:{},{}", dateStart, dateEnd);
         Map<Key, List<PairForecastObservation>> groupingPairs = new HashMap<>();
         for (WebSite webSite : webSiteRepository.findAll()) {
             for (City city : cityRepository.findAll()) {
-                List<Indication> forecasts = indicationRepository.findByWebSiteAndCityAndIsForecastAndDateIndicateBetween(webSite, city, true, dateStart, dateEnd);
+                List<Indication> forecasts = indicationRepository
+                        .findByWebSiteAndCityAndIsForecastAndDateIndicateBetween(webSite, city, true,
+                                dateStart, dateEnd);
                 Map<Key, List<Indication>> groupedForecasts = groupForecastsByKey(forecasts);
                 for (Map.Entry<Key, List<Indication>> groupForecasts : groupedForecasts.entrySet()) {
-                    List<PairForecastObservation> forecastObservationPairs = createForecastObservationPairs(groupForecasts.getValue());
+                    List<PairForecastObservation> forecastObservationPairs =
+                            createForecastObservationPairs(groupForecasts.getValue());
                     if (!forecastObservationPairs.isEmpty()) {
                         groupingPairs.put(groupForecasts.getKey(), forecastObservationPairs);
                     }
@@ -99,7 +113,8 @@ public class StatisticCalculator {
             return new ArrayList<>();
         }
         TreeSet<Indication> sortedForecasts = new TreeSet<>(forecasts);
-        List<Indication> observations = indicationRepository.findByWebSiteIsNullAndCityAndIsForecastAndDateIndicateBetween(
+        List<Indication> observations =
+                indicationRepository.findByWebSiteIsNullAndCityAndIsForecastAndDateIndicateBetween(
                 forecasts.get(0).getCity(),
                 false,
                 sortedForecasts.first().getDateIndicate().minus(1, ChronoUnit.HOURS),
@@ -117,17 +132,20 @@ public class StatisticCalculator {
     }
 
     private Statistic calculateStatistic(Key key, List<PairForecastObservation> forecastObservationList) {
-        log.debug("calculateStatistic(Key key, List<PairForecastObservation> forecastObservationList), параметры:{},{}", key, forecastObservationList);
+        log.debug("calculateStatistic(Key key, List<PairForecastObservation> forecastObservationList),"
+                +" параметры:{},{}", key, forecastObservationList);
         List<PairNumber> sequenceOfTemperature = forecastObservationList.stream()
                 .map(x -> new PairNumber<Double>(x.getForecast().getTemperature(),
                         x.getObservation().getTemperature()))
                 .collect(Collectors.toList());
         List<PairNumber> sequenceOfIntensity = forecastObservationList.stream()
-                .map(x -> new PairNumber<Integer>(x.getForecast().getIntensity().ordinal(),
-                        x.getObservation().getIntensity().ordinal()))
+                .map(x -> new PairNumber<Integer>(x.getForecast().getPrecipitation().ordinal(),
+                        x.getObservation().getPrecipitation().ordinal()))
                 .collect(Collectors.toList());
-        double standartDeviationOfTemperature = standartDeviationCalculator.calculateStandardDeviation(sequenceOfTemperature);
-        double standartDeviationOfIntensity = standartDeviationCalculator.calculateStandardDeviation(sequenceOfIntensity);
+        double standartDeviationOfTemperature =
+                standartDeviationCalculator.calculateStandardDeviation(sequenceOfTemperature);
+        double standartDeviationOfIntensity =
+                standartDeviationCalculator.calculateStandardDeviation(sequenceOfIntensity);
         Statistic statistic = Statistic.builder()
                 .standartDeviationTemperature(standartDeviationOfTemperature)
                 .standartDeviationIntencity(standartDeviationOfIntensity)
@@ -148,22 +166,28 @@ public class StatisticCalculator {
     }
 
     private Indication getNearestObservation(TreeSet<Indication> observations, Indication forecast) {
-        log.debug("getNearestObservation(TreeSet<Indication> observations, Indication forecast), параметры:{},{}", observations, forecast);
+        log.debug("getNearestObservation(TreeSet<Indication> observations, Indication forecast),"
+                +" параметры:{},{}", observations, forecast);
         Indication lowerObservation = observations.lower(forecast);
         Indication higherObservation = observations.higher(forecast);
 
         if (lowerObservation != null && higherObservation != null) {
-            long deltaObservation1 = lowerObservation.getDateIndicate().getEpochSecond() - forecast.getDateIndicate().getEpochSecond();
-            long deltaObservation2 = higherObservation.getDateIndicate().getEpochSecond() - forecast.getDateIndicate().getEpochSecond();
-            Indication nearestObservation = deltaObservation1 < deltaObservation2 ? lowerObservation : higherObservation;
+            long deltaObservation1 = Math.abs(ChronoUnit.SECONDS.between(lowerObservation.getDateIndicate(),
+                    forecast.getDateIndicate()));
+            long deltaObservation2 = Math.abs(ChronoUnit.SECONDS.between(higherObservation.getDateIndicate(),
+                    forecast.getDateIndicate()));
+            Indication nearestObservation =
+                    deltaObservation1 < deltaObservation2 ? lowerObservation : higherObservation;
             if (ChronoUnit.HOURS.between(nearestObservation.getDateIndicate(), forecast.getDateIndicate()) < 1) {
                 log.debug("результат:{}", nearestObservation);
                 return nearestObservation;
             }
-        } else if (lowerObservation != null && ChronoUnit.HOURS.between(lowerObservation.getDateIndicate(), forecast.getDateIndicate()) < 1) {
+        } else if (lowerObservation != null &&
+                ChronoUnit.HOURS.between(lowerObservation.getDateIndicate(), forecast.getDateIndicate()) < 1) {
             log.debug("результат:{}", lowerObservation);
             return lowerObservation;
-        } else if (higherObservation != null && ChronoUnit.HOURS.between(higherObservation.getDateIndicate(), forecast.getDateIndicate()) < 1) {
+        } else if (higherObservation != null &&
+                ChronoUnit.HOURS.between(higherObservation.getDateIndicate(), forecast.getDateIndicate()) < 1) {
             log.debug("результат:{}", higherObservation);
             return higherObservation;
         }

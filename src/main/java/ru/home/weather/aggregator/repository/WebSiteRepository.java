@@ -6,5 +6,6 @@ import ru.home.weather.aggregator.domain.WebSite;
 import java.util.Optional;
 
 public interface WebSiteRepository extends CrudRepository<WebSite, Long> {
-    Optional<WebSite> findByHttp(String http);
+    Optional<WebSite> findByUrl(String url);
+    Optional<WebSite> findByTitle(String title);
 }

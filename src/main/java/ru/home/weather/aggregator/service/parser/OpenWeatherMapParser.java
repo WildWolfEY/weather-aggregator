@@ -13,24 +13,26 @@ import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
-import ru.home.weather.aggregator.service.IntensityDeterminant;
+import ru.home.weather.aggregator.service.PrecipitationDeterminant;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * @author Elena Demeneva
- */
 @Service
 @Log4j2
 public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
-
     @Autowired
     WebSiteRepository webSiteRepository;
     @Autowired
-    IntensityDeterminant intensityDeterminant;
+    PrecipitationDeterminant precipitationDeterminant;
 
     private final URI url = URI.create("http://api.openweathermap.org/");
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -54,7 +56,7 @@ public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
                     .latitude(rawItem.getLat())
                     .longitude(rawItem.getLon())
                     .build();
-            city.toJson();
+            city.generateJsonString();
             cities.add(city);
             log.trace("adding city: {}", city);
         }
@@ -89,19 +91,15 @@ public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
 
     private Indication createIndication(WeatherData weatherData) throws JsonProcessingException {
         log.debug("createIndication(WeatherData weatherData), параметр:{}", weatherData);
-//        String conditions = new String();
-//                Arrays.stream(weatherData.weather).forEach(x->x.description);
-        String conditions =  Arrays.stream(weatherData.weather)
-                .map(x->x.description)
+        String conditions = Arrays.stream(weatherData.weather)
+                .map(x -> x.description)
                 .collect(Collectors.joining(", "));
         Indication indication = Indication.builder()
                 .dateRequest(Instant.now())
                 .dateIndicate(Instant.ofEpochSecond(weatherData.dt))
                 .temperature(weatherData.main.temp - 273.15f)
-                .millimeters((weatherData.rain != null ? weatherData.rain.millimeters : 0) +
-                        (weatherData.snow != null ? weatherData.snow.millimeters : 0))
-                .intensity(intensityDeterminant.getIntensity(conditions))
-                .webSite(webSiteRepository.findByHttp(url.toString())
+                .precipitation(precipitationDeterminant.getPrecipitation(conditions))
+                .webSite(webSiteRepository.findByUrl(url.toString())
                         .orElseGet(() -> saveWebSite(url)))
                 .build();
         log.debug("результат: {}", indication);
@@ -111,7 +109,7 @@ public class OpenWeatherMapParser implements WeatherDataParser<String, String> {
     private WebSite saveWebSite(URI url) {
         log.debug("saveWebSite(URI url) параметр:{}", url.toString());
         WebSite webSite = webSiteRepository.save(WebSite.builder()
-                .http(url.toString())
+                .url(url.toString())
                 .title("OpenWeatherMap").build());
         log.info("результат: в БД сохранен новый webSite {}", webSite);
         return webSite;

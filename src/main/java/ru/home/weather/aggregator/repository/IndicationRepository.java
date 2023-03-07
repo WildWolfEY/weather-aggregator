@@ -1,5 +1,7 @@
 package ru.home.weather.aggregator.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.CrudRepository;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
@@ -11,9 +13,21 @@ import java.util.List;
 //https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#jpa.query-methods.query-creation
 public interface IndicationRepository extends CrudRepository<Indication, Long> {
 
-    List<Indication> findByWebSiteAndCityAndIsForecastAndDateIndicateBetween(WebSite webSite, City city, boolean isForecast, Instant startDate, Instant endDate);
+    List<Indication> findByWebSiteAndCityAndIsForecastAndDateIndicateBetween(WebSite webSite,
+                                                                             City city,
+                                                                             boolean isForecast,
+                                                                             Instant startDate,
+                                                                             Instant endDate);
 
-    List<Indication> findByCityAndIsForecastAndDateIndicateBetween(City city, boolean isForecast, Instant startDate, Instant endDate);
+    List<Indication> findByCityAndIsForecastAndDateIndicateBetween(City city,
+                                                                   boolean isForecast,
+                                                                   Instant startDate,
+                                                                   Instant endDate);
 
-    List<Indication> findByWebSiteIsNullAndCityAndIsForecastAndDateIndicateBetween(City city, boolean isForecast, Instant startDate, Instant endDate);
+    List<Indication> findByWebSiteIsNullAndCityAndIsForecastAndDateIndicateBetween(City city,
+                                                                                   boolean isForecast,
+                                                                                   Instant startDate,
+                                                                                   Instant endDate);
+    Page<Indication> findAll(Pageable pageable);
+    Page<Indication> findByWebSite(WebSite webSite, Pageable pageable);
 }

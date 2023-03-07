@@ -7,10 +7,10 @@ import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.domain.Intensity;
+import ru.home.weather.aggregator.domain.Precipitation;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
-import ru.home.weather.aggregator.service.IntensityDeterminant;
+import ru.home.weather.aggregator.service.PrecipitationDeterminant;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,17 +23,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-/**
- * @author Elena Demeneva
- */
-
 @Service
 @Log4j2
 public class GisMeteoParser implements WeatherDataParser<Document, Document> {
     @Autowired
     WebSiteRepository webSiteRepository;
     @Autowired
-    IntensityDeterminant intensityDeterminant;
+    PrecipitationDeterminant precipitationDeterminant;
 
     @Override
     public List<Indication> parseForecastIndications(Document document) throws ParseException {
@@ -46,8 +42,7 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
                 Indication indication = Indication.builder()
                         .dateIndicate(forecastWeatherData.forecastDates.get(i))
                         .temperature(forecastWeatherData.temperature.get(i))
-                        .millimeters(forecastWeatherData.millimeters.get(i))
-                        .intensity(forecastWeatherData.intensity.get(i))
+                        .precipitation(forecastWeatherData.precipitation.get(i))
                         .dateRequest(Instant.now())
                         .isForecast(true)
                         .webSite(webSite)
@@ -72,7 +67,7 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
                 .dateIndicate(Instant.now())
                 .webSite(getWebSite())
                 .temperature(toFloat(temperatureNowElement.text()))
-                .intensity(intensityDeterminant.getIntensity(nowWeather.attr("data-text")))
+                .precipitation(precipitationDeterminant.getPrecipitation(nowWeather.attr("data-text")))
                 .build();
         log.debug("Результат: {}", indication);
         return indication;
@@ -88,17 +83,18 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
         if (rowTime != null && temperatureAir != null && temperatureAir != null && precipitationBars != null) {
             fillTimes(rowTime, forecastWeatherData);
             fillTemperatures(temperatureAir, forecastWeatherData);
-            fillMillimeters(precipitationBars, forecastWeatherData);
-            fillIntensity(precipitationIcons, forecastWeatherData);
+            fillPrecipitation(precipitationIcons, forecastWeatherData);
             return forecastWeatherData;
         } else {
-            log.warn("Не удалось распарсить страничку. times:{}, temperatures:{}, precipitations{}", rowTime, temperatureAir, precipitationBars);
+            log.warn("Не удалось распарсить страничку. times:{}, temperatures:{}, precipitations{}",
+                    rowTime, temperatureAir, precipitationBars);
             throw new ParseException("Не удалось распарсить страничку", 0);
         }
     }
 
     private void fillTimes(Element timesForDay, ForecastWeatherData forecastWeatherData) throws ParseException {
-        log.debug("fillTimes(Element timesForDay, WeatherData weatherData), параметры:{},{}", timesForDay, forecastWeatherData);
+        log.debug("fillTimes(Element timesForDay, WeatherData weatherData), параметры:{},{}",
+                timesForDay, forecastWeatherData);
         List<String> dateTimeRawList = timesForDay.getElementsByClass("row-item").eachAttr("title");
         for (String dateTimeRaw : dateTimeRawList) {
             String[] dateTimeString = dateTimeRaw.split("UTC: ");
@@ -115,8 +111,10 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
     }
 
     private void fillTemperatures(Element temperaturesForDay, ForecastWeatherData forecastWeatherData) {
-        log.debug("fillTemperatures(Element temperaturesForDay, WeatherData weatherData), параметры:{},{}", temperaturesForDay, forecastWeatherData);
-        List<String> temperatureRawList = temperaturesForDay.getElementsByClass("unit unit_temperature_c").eachText();
+        log.debug("fillTemperatures(Element temperaturesForDay, WeatherData weatherData), параметры:{},{}",
+                temperaturesForDay, forecastWeatherData);
+        List<String> temperatureRawList =
+                temperaturesForDay.getElementsByClass("unit unit_temperature_c").eachText();
         for (String temperatureString : temperatureRawList) {
             Float temperature = toFloat(temperatureString);
             if (temperature != null) {
@@ -132,7 +130,9 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
             return null;
         }
         try {
-            String cleanSymbols = temperatureString.replaceAll("−", "-").replaceAll(",", ".");
+            String cleanSymbols = temperatureString
+                    .replaceAll("−", "-")
+                    .replaceAll(",", ".");
             log.debug("результат:{}", cleanSymbols);
             return Float.parseFloat(cleanSymbols);
         } catch (NumberFormatException exception) {
@@ -140,23 +140,13 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
         }
     }
 
-    private void fillMillimeters(Element millimetersForDay, ForecastWeatherData forecastWeatherData) {
-        log.debug("fillMillimeters(Element millimetersForDay, WeatherData weatherData), параметры:{},{}", millimetersForDay, forecastWeatherData);
-        List<String> millimetersRawList = millimetersForDay.getElementsByClass("item-unit").eachText();
-        for (String millimeterString : millimetersRawList) {
-            Float millimeter = toFloat(millimeterString);
-            if (millimeter != null) {
-                forecastWeatherData.millimeters.add(millimeter);
-            }
-        }
-        log.debug("результат: {}", forecastWeatherData);
-    }
-
-    private void fillIntensity(Element conditionsForDay, ForecastWeatherData forecastWeatherData) {
-        log.debug("fillIntensity(Element conditionsForDay, WeatherData weatherData), параметры:{},{}", conditionsForDay, forecastWeatherData);
-        List<String> conditionList = conditionsForDay.getElementsByClass("weather-icon tooltip").eachAttr("data-text");
+    private void fillPrecipitation(Element conditionsForDay, ForecastWeatherData forecastWeatherData) {
+        log.debug("fillIntensity(Element conditionsForDay, WeatherData weatherData), параметры:{},{}",
+                conditionsForDay, forecastWeatherData);
+        List<String> conditionList = conditionsForDay.getElementsByClass("weather-icon tooltip")
+                .eachAttr("data-text");
         for (String condition : conditionList) {
-            forecastWeatherData.intensity.add(intensityDeterminant.getIntensity(condition));
+            forecastWeatherData.precipitation.add(precipitationDeterminant.getPrecipitation(condition));
         }
         log.debug("результат: {}", forecastWeatherData);
     }
@@ -183,30 +173,30 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
         log.debug("результат: {}", uri);
         return uri;
     }
+
     @Data
     private static class ForecastWeatherData {
         List<Instant> forecastDates = new ArrayList<>();
         List<Float> temperature = new ArrayList<>();
-        List<Float> millimeters = new ArrayList<>();
-        List<Intensity> intensity = new ArrayList<>();
+        List<Precipitation> precipitation = new ArrayList<>();
     }
 
     @Data
     private static class ObservationWeatherData {
         Instant ObservationDate;
         float temperature;
-        Intensity intensity;
+        Precipitation precipitation;
     }
 
     private WebSite getWebSite() {
-        return webSiteRepository.findByHttp("https://www.gismeteo.ru/")
-                .orElseGet(() -> saveWebSite());
+        return webSiteRepository.findByUrl("https://www.gismeteo.ru/")
+                .orElseGet(this::saveWebSite);
     }
 
     private WebSite saveWebSite() {
         log.debug("saveWebSite()");
         WebSite webSite = webSiteRepository.save(WebSite.builder()
-                .http("https://www.gismeteo.ru/")
+                .url("https://www.gismeteo.ru/")
                 .title("GisMeteo").build());
         log.info("результат: в БД сохранен новый webSite {}", webSite);
         return webSite;

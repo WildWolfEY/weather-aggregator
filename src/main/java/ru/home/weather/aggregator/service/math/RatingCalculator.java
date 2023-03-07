@@ -24,7 +24,8 @@ public class RatingCalculator {
     StandartDeviationCalculator standartDeviationCalculator;
 
     public List<WebSite> getRating(City city, int antiquity, int moreImportantIndicator) {
-        log.debug("getRating(City city, int antiquity, int moreImportantIndicator)), параметры:{},{},{}", city, antiquity, moreImportantIndicator);
+        log.debug("getRating(City city, int antiquity, int moreImportantIndicator)), параметры:{},{},{}",
+                city, antiquity, moreImportantIndicator);
         List<Statistic> statistics = getStatisticByCityAndAntiquity(city, antiquity);
         return calculateRating(statistics, moreImportantIndicator);
     }
@@ -47,7 +48,8 @@ public class RatingCalculator {
     }
 
     private List<WebSite> calculateRating(List<Statistic> statistics, int moreImportantIndicator) {
-        log.debug("calculateRating(List<Statistic> statistics, int moreImportantIndicator), параметры:{},{}", statistics, moreImportantIndicator);
+        log.debug("calculateRating(List<Statistic> statistics, int moreImportantIndicator), параметры:{},{}",
+                statistics, moreImportantIndicator);
         Map<WebSite, List<Statistic>> groupingStatistic = groupStatisticByWebsite(statistics);
         Map<WebSite, Double> webSiteAndstandartDeviations = new HashMap<>();
         for (Map.Entry<WebSite, List<Statistic>> groupStatisticByWebSite : groupingStatistic.entrySet()) {
@@ -60,23 +62,31 @@ public class RatingCalculator {
     }
 
     private Double calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator) {
-        log.debug("calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator), параметры:{},{}", groupedStatistic, moreImportantIndicator);
+        log.debug("calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator),"+
+                " параметры:{},{}", groupedStatistic, moreImportantIndicator);
         double result = 0;
         if (moreImportantIndicator == 1) {
-            result = standartDeviationCalculator.calculateAverage(
-                    groupedStatistic.stream().map(Statistic::getStandartDeviationTemperature).collect(Collectors.toList()));
+            result = standartDeviationCalculator.calculateStandardDeviationAverage(
+                    groupedStatistic.stream()
+                            .map(Statistic::getStandartDeviationTemperature)
+                            .collect(Collectors.toList()));
         } else if (moreImportantIndicator == 2) {
-            result = standartDeviationCalculator.calculateAverage(
-                    groupedStatistic.stream().map(Statistic::getStandartDeviationIntencity).collect(Collectors.toList()));
+            result = standartDeviationCalculator.calculateStandardDeviationAverage(
+                    groupedStatistic.stream()
+                            .map(Statistic::getStandartDeviationIntencity)
+                            .collect(Collectors.toList()));
 
         } else {
             int NORMALIZATION_COEFFICIENT = 10;
-            result = (standartDeviationCalculator.calculateAverage(
-                    groupedStatistic.stream().map(Statistic::getStandartDeviationTemperature).collect(Collectors.toList())))
-                    + (standartDeviationCalculator.calculateAverage(
-                    groupedStatistic.stream().map(Statistic::getStandartDeviationIntencity).collect(Collectors.toList())))
+            result = (standartDeviationCalculator.calculateStandardDeviationAverage(
+                    groupedStatistic.stream()
+                            .map(Statistic::getStandartDeviationTemperature)
+                            .collect(Collectors.toList())))
+                    + (standartDeviationCalculator.calculateStandardDeviationAverage(
+                    groupedStatistic.stream()
+                            .map(Statistic::getStandartDeviationIntencity)
+                            .collect(Collectors.toList())))
                     * NORMALIZATION_COEFFICIENT;
-
         }
         log.debug("результат: {}", result);
         return result;

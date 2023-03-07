@@ -16,10 +16,6 @@ import ru.home.weather.aggregator.service.math.RatingCalculator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Elena Demeneva
- */
-
 @Controller
 @Log4j2
 public class UIController {
@@ -46,7 +42,10 @@ public class UIController {
     }
 
     @GetMapping("/city/search")
-    public String searchCity(@RequestParam String name, @RequestParam String area, @RequestParam String country, Model model) {
+    public String searchCity(@RequestParam String name,
+                             @RequestParam String area,
+                             @RequestParam String country,
+                             Model model) {
         try {
             List<City> foundCities = maptilerApiController.getCities(name, area, country);
             model.addAttribute("cities", foundCities);
@@ -91,7 +90,7 @@ public class UIController {
             model.addAttribute("websites", webSites);
             log.debug("результат:{}", webSites);
         } catch (Exception exception) {
-            log.warn("Ошибка при подсчёте рейтинга", exception.toString(), exception.getMessage());
+            log.warn("Ошибка при подсчёте рейтинга {},{}", exception, exception.getMessage());
             handleException(exception.getMessage(), model);
             return goToMain(model);
         }

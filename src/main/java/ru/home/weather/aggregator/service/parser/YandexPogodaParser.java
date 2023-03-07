@@ -12,15 +12,19 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.domain.Intensity;
+import ru.home.weather.aggregator.domain.Precipitation;
 import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
-import ru.home.weather.aggregator.service.IntensityDeterminant;
+import ru.home.weather.aggregator.service.PrecipitationDeterminant;
 
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.TimeZone;
 
 @Service
 @Log4j2
@@ -28,7 +32,7 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
     @Autowired
     WebSiteRepository webSiteRepository;
     @Autowired
-    IntensityDeterminant intensityDeterminant;
+    PrecipitationDeterminant precipitationDeterminant;
     private final URI url = URI.create("https://yandex.ru/pogoda/");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -48,19 +52,25 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
                 log.debug("content from <class='weather-table__row'>: {}", dayPart.text());
                 numberPartOfDay++;
                 Element weatherTableTemperature = dayPart.getElementsByClass("weather-table__temp").get(0);
-                Elements temperatures = weatherTableTemperature.getElementsByClass("temp__value temp__value_with-unit");
+                Elements temperatures = weatherTableTemperature
+                        .getElementsByClass("temp__value temp__value_with-unit");
                 int partOfNumberPartOfDay = 0;
                 for (Element temperature : temperatures) {
-                    log.debug("content from <class='temp__value temp__value_with-unit'>: {}", temperature.text());
+                    log.debug("content from <class='temp__value temp__value_with-unit'>: {}",
+                            temperature.text());
                     partOfNumberPartOfDay++;
                     addTime(date, numberPartOfDay, partOfNumberPartOfDay);
                     Instant dateForecast = Instant.ofEpochMilli(date.getTimeInMillis());
-                    String condition = dayPart.getElementsByClass("weather-table__body-cell weather-table__body-cell_type_condition").first().text();
+                    String condition = dayPart
+                            .getElementsByClass(
+                                    "weather-table__body-cell weather-table__body-cell_type_condition")
+                            .first()
+                            .text();
                     if (dateForecast.isAfter(Instant.now())) {
                         Indication indication = createIndication(
                                 dateForecast,
                                 Float.valueOf(temperature.text().replace("−", "-")),
-                                intensityDeterminant.getIntensity(condition)
+                                precipitationDeterminant.getPrecipitation(condition)
                         );
 
                         indication.setForecast(true);
@@ -78,7 +88,8 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
         log.debug("parseObservationIndication(String responseBody) параметр:{}", responseBody);
         WeatherData weatherData = objectMapper.readValue(responseBody, WeatherData.class);
         Instant dataIndication = Instant.ofEpochSecond(weatherData.getFact().obs_time);
-        Indication indication = createIndication(dataIndication, weatherData.getFact().temp, intensityDeterminant.getIntensity(weatherData.fact.condition));
+        Indication indication = createIndication(dataIndication, weatherData.getFact().temp,
+                precipitationDeterminant.getPrecipitation(weatherData.fact.condition));
         indication.setForecast(false);
         log.debug("результат:{}", indication);
         return indication;
@@ -95,7 +106,8 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
     }
 
     private void addTime(Calendar date, int partOfDay, int partOfPart) {
-        log.debug("addTime(Calendar date, int partOfDay, int partOfPart), параметры: {},{},{}", date, partOfDay, partOfPart);
+        log.debug("addTime(Calendar date, int partOfDay, int partOfPart), параметры: {},{},{}",
+                date, partOfDay, partOfPart);
         if (partOfDay == 1 && partOfPart == 1) {
             date.add(Calendar.HOUR, 6);
         } else {
@@ -104,14 +116,15 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
         log.debug("результат {}", date);
     }
 
-    private Indication createIndication(Instant dateIndicate, float temperature, Intensity intensity) {
-        log.debug("createIndication(Instant dateIndicate, float temperature, Intensity intensity), параметры: {},{},{}", dateIndicate, temperature, intensity);
+    private Indication createIndication(Instant dateIndicate, float temperature, Precipitation precipitation) {
+        log.debug("createIndication(Instant dateIndicate, float temperature, Precipitation precipitation),"+
+                " параметры: {},{},{}", dateIndicate, temperature, precipitation);
         return Indication.builder()
                 .dateRequest(Instant.now())
                 .dateIndicate(dateIndicate)
                 .temperature(temperature)
-                .intensity(intensity)
-                .webSite(webSiteRepository.findByHttp(url.toString())
+                .precipitation(precipitation)
+                .webSite(webSiteRepository.findByUrl(url.toString())
                         .orElseGet(() -> saveWebSite()))
                 .build();
     }
@@ -119,7 +132,7 @@ public class YandexPogodaParser implements WeatherDataParser<Document, String> {
     private WebSite saveWebSite() {
         log.debug("saveWebSite()");
         WebSite webSite = webSiteRepository.save(WebSite.builder()
-                .http(url.toString())
+                .url(url.toString())
                 .title("YandexPogoda").build());
         log.info("результат: в БД сохранен новый webSite {}", webSite);
         return webSite;
