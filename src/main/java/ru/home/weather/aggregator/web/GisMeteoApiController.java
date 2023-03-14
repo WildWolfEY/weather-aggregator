@@ -54,11 +54,7 @@ public class GisMeteoApiController implements WeatherApiController {
         try {
             getGoogleContent(city);
             URI uri = URI.create(parser.findLinkGisMeteo(getGoogleContent(city)).toString().concat("/now"));
-            try {
                 parser.parseObservationIndication(getGisMeteoContent(uri));
-            } catch (ParseException exception) {
-                log.warn("адрес странички:{}", uri);
-            }
         } catch (Exception exception) {
             log.warn("Не удалось корректно выполнить запрос getForecasts(City city) с параметром:{}." +
                     " Ошибка {},{}", city, exception.toString(), exception.getMessage());

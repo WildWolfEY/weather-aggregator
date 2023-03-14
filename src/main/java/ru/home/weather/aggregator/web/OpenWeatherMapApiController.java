@@ -8,13 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
-import ru.home.weather.aggregator.exception.CryptoTokenReadingException;
+import ru.home.weather.aggregator.exceptions.crypto.CryptoException;
 import ru.home.weather.aggregator.service.Crypto;
 import ru.home.weather.aggregator.domain.City;
 import ru.home.weather.aggregator.domain.Indication;
-import ru.home.weather.aggregator.exception.CryptoKeyCodingException;
 import ru.home.weather.aggregator.service.parser.OpenWeatherMapParser;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,8 +41,8 @@ public class OpenWeatherMapApiController implements WeatherApiController {
     private byte[] getToken() {
         if (token.length == 0) {
             try {
-                token = crypto.getToken(tokenFileName);
-            } catch (CryptoKeyCodingException | CryptoTokenReadingException e) {
+                token = crypto.getToken(new FileInputStream(tokenFileName));
+            } catch (CryptoException | FileNotFoundException e) {
                 log.warn(e.getMessage(), e);
             }
         }

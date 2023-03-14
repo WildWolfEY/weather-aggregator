@@ -27,7 +27,9 @@ public class RatingCalculator {
         log.debug("getRating(City city, int antiquity, int moreImportantIndicator)), параметры:{},{},{}",
                 city, antiquity, moreImportantIndicator);
         List<Statistic> statistics = getStatisticByCityAndAntiquity(city, antiquity);
-        return calculateRating(statistics, moreImportantIndicator);
+        Map<WebSite, Double> webSiteAndStandartDeviations = calculateRating(statistics, moreImportantIndicator);
+        return webSiteAndStandartDeviations.entrySet().stream()
+                .sorted(Comparator.comparing(Map.Entry::getValue)).map(Map.Entry::getKey).collect(Collectors.toList()) ;
     }
 
     private List<Statistic> getStatisticByCityAndAntiquity(City city, int antiquity) {
@@ -47,18 +49,17 @@ public class RatingCalculator {
         }
     }
 
-    private List<WebSite> calculateRating(List<Statistic> statistics, int moreImportantIndicator) {
+    private Map<WebSite, Double> calculateRating(List<Statistic> statistics, int moreImportantIndicator) {
         log.debug("calculateRating(List<Statistic> statistics, int moreImportantIndicator), параметры:{},{}",
                 statistics, moreImportantIndicator);
         Map<WebSite, List<Statistic>> groupingStatistic = groupStatisticByWebsite(statistics);
-        Map<WebSite, Double> webSiteAndstandartDeviations = new HashMap<>();
+        Map<WebSite, Double> webSiteAndStandartDeviations = new HashMap<>();
         for (Map.Entry<WebSite, List<Statistic>> groupStatisticByWebSite : groupingStatistic.entrySet()) {
             double value = calculateStandartDeviation(groupStatisticByWebSite.getValue(), moreImportantIndicator);
-            webSiteAndstandartDeviations.put(groupStatisticByWebSite.getKey(), value);
+            webSiteAndStandartDeviations.put(groupStatisticByWebSite.getKey(), value);
             log.debug("adding:{} {}",groupStatisticByWebSite.getKey(), value);
         }
-        return webSiteAndstandartDeviations.entrySet().stream()
-                .sorted(Comparator.comparing(Map.Entry::getValue)).map(Map.Entry::getKey).collect(Collectors.toList());
+        return webSiteAndStandartDeviations;
     }
 
     private Double calculateStandartDeviation(List<Statistic> groupedStatistic, int moreImportantIndicator) {

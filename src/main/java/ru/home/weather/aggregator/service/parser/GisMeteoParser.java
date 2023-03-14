@@ -55,7 +55,7 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
     }
 
     @Override
-    public Indication parseObservationIndication(Document document) throws ParseException {
+    public Indication parseObservationIndication(Document document) {
         log.debug("parseObservationIndication(Document document), параметр:{}", document);
         Element nowWeather = document.getElementsByClass("weathertabs day-0")
                 .first()
@@ -80,7 +80,7 @@ public class GisMeteoParser implements WeatherDataParser<Document, Document> {
         Element temperatureAir = content.getElementsByAttributeValue("data-row", "temperature-air").first();
         Element precipitationBars = content.getElementsByAttributeValue("data-row", "precipitation-bars").first();
         Element precipitationIcons = content.getElementsByAttributeValue("data-row", "icon-tooltip").first();
-        if (rowTime != null && temperatureAir != null && temperatureAir != null && precipitationBars != null) {
+        if (rowTime != null && temperatureAir != null && precipitationBars != null) {
             fillTimes(rowTime, forecastWeatherData);
             fillTemperatures(temperatureAir, forecastWeatherData);
             fillPrecipitation(precipitationIcons, forecastWeatherData);

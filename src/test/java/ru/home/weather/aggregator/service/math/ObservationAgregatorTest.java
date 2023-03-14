@@ -40,17 +40,16 @@ class ObservationAgregatorTest {
     void getAverageObservations() {
         LocalDate dateStart = FMT.parse("2023-06-12 00:00:00", LocalDate::from);
         LocalDate dateEnd = FMT.parse("2023-06-13 00:00:00", LocalDate::from);
-        List<City> cities = List.of(new City());
-        Mockito.doReturn(cities)
+        Mockito.doReturn(List.of(new City()))
                 .when(cityRepository)
                 .findAll();
 
-        Mockito.doReturn(prepareIndications())
+        Mockito.doReturn(prepareIndicationsData())
                 .when(indicationRepository).findByCityAndIsForecastAndDateIndicateBetween(
-                ArgumentMatchers.any(City.class),
-                ArgumentMatchers.anyBoolean(),
-                ArgumentMatchers.any(Instant.class),
-                ArgumentMatchers.any(Instant.class));
+                        ArgumentMatchers.any(City.class),
+                        ArgumentMatchers.anyBoolean(),
+                        ArgumentMatchers.any(Instant.class),
+                        ArgumentMatchers.any(Instant.class));
 
         List<Indication> indications = observationAgregator.getAverageObservations(dateStart, dateEnd);
 
@@ -61,7 +60,7 @@ class ObservationAgregatorTest {
         Assert.isTrue(indications.size() == 4, "Неверно сгруппировали измерения");
     }
 
-    private List<Indication> prepareIndications() {
+    private List<Indication> prepareIndicationsData() {
         Indication i1 = Indication.builder()
                 .dateIndicate(FMT.parse("2023-06-12 12:03:00", Instant::from))
                 .temperature(10)

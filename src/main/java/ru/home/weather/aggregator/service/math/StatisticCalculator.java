@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -93,7 +94,7 @@ public class StatisticCalculator {
             Key key = Key.builder()
                     .webSite(forecast.getWebSite())
                     .city(forecast.getCity())
-                    .antiquity((int) ChronoUnit.DAYS.between(forecast.getDateIndicate(), forecast.getDateRequest()))
+                    .antiquity(Math.abs((int)ChronoUnit.DAYS.between(forecast.getDateIndicate(), forecast.getDateRequest())))
                     .build();
             if (groupedForecasts.get(key) == null) {
                 List<Indication> newForecastsList = new ArrayList<>();
@@ -170,7 +171,10 @@ public class StatisticCalculator {
                 +" параметры:{},{}", observations, forecast);
         Indication lowerObservation = observations.lower(forecast);
         Indication higherObservation = observations.higher(forecast);
-
+        if(observations.contains(forecast))
+        {
+            return forecast;
+        }
         if (lowerObservation != null && higherObservation != null) {
             long deltaObservation1 = Math.abs(ChronoUnit.SECONDS.between(lowerObservation.getDateIndicate(),
                     forecast.getDateIndicate()));

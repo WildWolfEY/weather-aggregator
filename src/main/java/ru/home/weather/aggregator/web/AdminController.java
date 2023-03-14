@@ -17,6 +17,8 @@ import ru.home.weather.aggregator.domain.WebSite;
 import ru.home.weather.aggregator.repository.IndicationRepository;
 import ru.home.weather.aggregator.repository.WebSiteRepository;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.charset.Charset;
 
 @Controller
@@ -41,8 +43,8 @@ public class AdminController {
 
     @GetMapping("/admin/weathers")
     public String goToWeatherPage(Model model,
-                              @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC)
-                              Pageable pageable) {
+                                  @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC)
+                                  Pageable pageable) {
         model.addAttribute("page", "weathers");
         Page<Indication> page = indicationRepository.findAll(pageable);
 
@@ -51,10 +53,11 @@ public class AdminController {
         model.addAttribute("url", "/admin/weathers");
         return "admin_panel";
     }
+
     @GetMapping("/admin/weather/filter")
     public String goToFilteredWeatherPage(@RequestParam String website, Model model,
-                                               @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC)
-                                               Pageable pageable) {
+                                          @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC)
+                                          Pageable pageable) {
         model.addAttribute("page", "weathers");
         WebSite webSite = webSiteRepository.findByTitle(website).get();
         Page<Indication> page = indicationRepository.findByWebSite(webSite, pageable);
@@ -101,7 +104,8 @@ public class AdminController {
     @GetMapping("/admin/encrypt/yandex")
     public String encryptYandexToken(@RequestParam String yandextoken, Model model) {
         try {
-            crypto.encryptToken(yandextoken.getBytes(charset), yandexTokenFileName);
+            new File(yandexTokenFileName).createNewFile();
+            crypto.encryptToken(yandextoken.getBytes(charset), new FileOutputStream(yandexTokenFileName));
         } catch (Exception e) {
             handleException(e, model);
         }
@@ -111,10 +115,11 @@ public class AdminController {
     @GetMapping("/admin/encrypt/open-weather-map")
     public String encryptOpenWeatherMapToken(@RequestParam String openweathermaptoken, Model model) {
         try {
-            crypto.encryptToken(openweathermaptoken.getBytes(charset), openweathermapTokenFileName);
+            new File(openweathermapTokenFileName).createNewFile();
+            crypto.encryptToken(openweathermaptoken.getBytes(charset), new FileOutputStream(openweathermapTokenFileName));
         } catch (Exception e) {
             handleException(e, model);
         }
-       return goToKeyPage(model);
+        return goToKeyPage(model);
     }
 }
